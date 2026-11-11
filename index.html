@@ -62,7 +62,7 @@
                     </div>
                 </div>
                 <div class="flex items-center space-x-4">
-                    <!-- Seletor de Perfil -->
+                    <!-- Seletor de Perfil Protegido -->
                     <div class="bg-brand-800 px-3 py-1.5 rounded-lg border border-brand-700 flex items-center gap-2">
                         <span class="text-xs text-brand-100 font-semibold"><i class="fa-solid fa-user-shield mr-1"></i> Perfil:</span>
                         <select id="seletor-perfil" onchange="tentarMudarPerfil(this.value)" class="bg-brand-900 text-white text-xs font-bold rounded p-1 border border-brand-600 focus:outline-none">
@@ -126,7 +126,7 @@
                     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
                         <div class="bg-slate-50 border border-slate-200 p-4 rounded-xl">
                             <div class="flex items-center justify-between">
-                                <span class="text-xs font-semibold text-slate-500 uppercase">Total de Alunos</span>
+                                <span class="text-xs font-semibold text-slate-500 uppercase">Total de Alunos (Ativos)</span>
                                 <i class="fa-solid fa-user-graduate text-brand-600"></i>
                             </div>
                             <span id="dash-total-alunos" class="text-2xl font-bold text-slate-800 mt-2 block">0</span>
@@ -150,7 +150,7 @@
 
                         <div class="bg-rose-50 border border-rose-200 p-4 rounded-xl">
                             <div class="flex items-center justify-between">
-                                <span class="text-xs font-semibold text-rose-700 uppercase">Bolsa Família em Risco (&lt;75%)</span>
+                                <span class="text-xs font-semibold text-rose-700 uppercase">Bolsa Família em Risco (<75%)</span>
                                 <i class="fa-solid fa-circle-exclamation text-rose-600"></i>
                             </div>
                             <span id="dash-bolsa-risco" class="text-2xl font-bold text-rose-800 mt-2 block">0</span>
@@ -232,7 +232,7 @@
                         <div>
                             <h2 class="text-xl font-bold text-slate-800">Painel de Busca Ativa Escolar</h2>
                             <p class="text-xs text-amber-600 font-semibold mt-1">
-                                <i class="fa-solid fa-triangle-exclamation"></i> Alunos com 1 ou mais faltas entram automaticamente nesta lista. (Disponível para edição dos professores).
+                                <i class="fa-solid fa-triangle-exclamation"></i> Alunos ativos com 1 ou mais faltas entram automaticamente nesta lista. (Disponível para edição dos professores).
                             </p>
                         </div>
                         <div class="flex gap-2">
@@ -343,8 +343,8 @@
                                     <th class="p-3">RA</th>
                                     <th class="p-3">Aluno</th>
                                     <th class="p-3">Turma</th>
+                                    <th class="p-3">Status Matrícula</th>
                                     <th class="p-3">Responsável Legal</th>
-                                    <th class="p-3">Tutor</th>
                                     <th class="p-3">Telefone</th>
                                     <th class="p-3">Bolsa Família</th>
                                     <th id="th-acoes-aluno" class="p-3 text-center">Ações</th>
@@ -455,8 +455,9 @@
         </div>
     </div>
 
+    <!-- MODAL ALUNO (COM TRANSFERÊNCIA INTEGRADA) -->
     <div id="modal-aluno" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
-        <div class="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
+        <div class="bg-white rounded-xl shadow-xl max-w-md w-full p-6 max-h-[90vh] overflow-y-auto">
             <div class="flex justify-between items-center mb-4 border-b pb-3">
                 <h3 id="modal-aluno-titulo" class="font-bold text-lg text-slate-800">Novo Aluno</h3>
                 <button onclick="fecharModalAluno()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-xl"></i></button>
@@ -479,6 +480,27 @@
                         <input type="text" id="form-aluno-turma" placeholder="Ex: 6º Ano A" class="w-full border rounded-lg p-2 bg-slate-50">
                     </div>
                 </div>
+
+                <!-- CAMPO STATUS DA MATRÍCULA -->
+                <div class="p-3 bg-slate-50 rounded-lg border border-slate-200">
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Situação da Matrícula</label>
+                    <select id="form-aluno-status" onchange="alternarCamposTransferencia()" class="w-full border rounded-lg p-2 bg-white font-semibold text-xs">
+                        <option value="ATIVO">ATIVO (Frequenta a Aula)</option>
+                        <option value="TRANSFERIDO">INATIVO / TRANSFERIDO</option>
+                    </select>
+
+                    <div id="box-transferencia" class="hidden mt-3 space-y-3 pt-2 border-t border-slate-200">
+                        <div>
+                            <label class="block text-[11px] font-semibold text-rose-700 mb-1">Data da Transferência</label>
+                            <input type="date" id="form-aluno-data-transf" class="w-full border border-rose-300 rounded-lg p-1.5 bg-rose-50/50 text-xs">
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-semibold text-rose-700 mb-1">Escola Destino</label>
+                            <input type="text" id="form-aluno-escola-destino" placeholder="Ex: EE Profª Maria Célia" class="w-full border border-rose-300 rounded-lg p-1.5 bg-rose-50/50 text-xs">
+                        </div>
+                    </div>
+                </div>
+
                 <div>
                     <label class="block text-xs font-semibold text-slate-600 mb-1">Nome do Responsável Legal</label>
                     <input type="text" id="form-aluno-responsavel" placeholder="Nome do responsável legal" class="w-full border rounded-lg p-2 bg-slate-50">
@@ -528,23 +550,30 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
 
-        let perfilAtual = "professor"; // FORÇADO A INICIAR COMO PROFESSOR POR SEGURANÇA
+        let perfilAtual = "professor"; // INICIA COMO PROFESSOR
 
+        // VERIFICAÇÃO RIGOROSA DA SENHA 9999 DA SECRETARIA
         function tentarMudarPerfil(novoPerfil) {
+            const seletor = document.getElementById('seletor-perfil');
+
             if (novoPerfil === 'secretaria') {
-                const senhaDigitada = prompt("Digite a senha da Secretaria:");
+                const senhaDigitada = prompt("Digite a senha exclusiva da Secretaria:");
                 if (senhaDigitada === "9999") {
                     perfilAtual = "secretaria";
+                    seletor.value = "secretaria";
                     aplicarPermissoesPerfil();
                     showToast("Modo Secretaria ativado com sucesso!");
                 } else {
-                    alert("Senha incorreta!");
-                    document.getElementById('seletor-perfil').value = "professor";
+                    if (senhaDigitada !== null) {
+                        alert("Senha incorreta! Acesso restrito à Secretaria.");
+                    }
                     perfilAtual = "professor";
+                    seletor.value = "professor";
                     aplicarPermissoesPerfil();
                 }
             } else {
                 perfilAtual = "professor";
+                seletor.value = "professor";
                 aplicarPermissoesPerfil();
                 showToast("Modo Professor ativado (Edição restrita à Busca Ativa)");
             }
@@ -682,24 +711,25 @@
 
         // ==================== DASHBOARD ====================
         function renderizarDashboard() {
-            const totalAlunos = appState.alunos.length;
+            const alunosAtivos = appState.alunos.filter(a => a.status !== 'TRANSFERIDO');
+            const totalAlunos = alunosAtivos.length;
             const bolsaAlunos = appState.alunos.filter(a => a.bolsaFamilia === 'SIM');
             const bimestreAtual = 1;
 
             let contBuscaAtiva = 0;
             let contBolsaRisco = 0;
 
-            appState.alunos.forEach(aluno => {
+            alunosAtivos.forEach(aluno => {
                 const faltasArray = getFaltasAlunoBimestre(aluno.id, bimestreAtual);
-                const totalFaltas = faltasArray.length;
-                if (totalFaltas >= 1) contBuscaAtiva++;
+                if (faltasArray.length >= 1) contBuscaAtiva++;
+            });
 
-                if (aluno.bolsaFamilia === 'SIM') {
-                    const totalDias = (appState.config && appState.config.bimestres && appState.config.bimestres[bimestreAtual]) || 50;
-                    const presencas = Math.max(0, totalDias - totalFaltas);
-                    const freq = (presencas / totalDias) * 100;
-                    if (freq < 75) contBolsaRisco++;
-                }
+            bolsaAlunos.forEach(aluno => {
+                const faltasArray = getFaltasAlunoBimestre(aluno.id, bimestreAtual);
+                const totalDias = (appState.config && appState.config.bimestres && appState.config.bimestres[bimestreAtual]) || 50;
+                const presencas = Math.max(0, totalDias - faltasArray.length);
+                const freq = (presencas / totalDias) * 100;
+                if (freq < 75) contBolsaRisco++;
             });
 
             document.getElementById('dash-total-alunos').innerText = totalAlunos;
@@ -708,10 +738,10 @@
             document.getElementById('dash-bolsa-risco').innerText = contBolsaRisco;
 
             const listaBuscaEl = document.getElementById('dash-lista-busca');
-            const alunosRisco = appState.alunos.filter(a => getFaltasAlunoBimestre(a.id, 1).length >= 1).slice(0, 4);
+            const alunosRisco = alunosAtivos.filter(a => getFaltasAlunoBimestre(a.id, 1).length >= 1).slice(0, 4);
 
             if (alunosRisco.length === 0) {
-                listaBuscaEl.innerHTML = '<p class="text-xs text-slate-400">Nenhum aluno em alerta de faltas no momento.</p>';
+                listaBuscaEl.innerHTML = '<p class="text-xs text-slate-400">Nenhum aluno ativo em alerta de faltas no momento.</p>';
             } else {
                 listaBuscaEl.innerHTML = alunosRisco.map(a => {
                     const faltas = getFaltasAlunoBimestre(a.id, 1).length;
@@ -747,35 +777,47 @@
                 return;
             }
 
-            tabelaCorpo.innerHTML = alunosTurma.map(a => `
-                <tr class="hover:bg-slate-50">
-                    <td class="p-3 font-mono text-xs text-slate-500">${a.ra}</td>
-                    <td class="p-3 font-medium text-slate-800">${a.nome}</td>
-                    <td class="p-3">
-                        <span class="text-xs px-2 py-0.5 rounded-full font-semibold ${a.bolsaFamilia === 'SIM' ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-500'}">
-                            ${a.bolsaFamilia === 'SIM' ? 'Bolsa Família' : 'Não Beneficiário'}
-                        </span>
-                    </td>
-                    <td class="p-3 text-center">
-                        <div class="flex flex-col sm:flex-row items-center justify-center gap-2">
-                            <div class="inline-flex rounded-md shadow-sm" role="group">
-                                <button type="button" data-aluno-id="${a.id}" data-status="P" onclick="alternarPresencaBtn(this, 'P')" class="btn-presenca px-4 py-1.5 text-xs font-bold rounded-l-lg border border-slate-300 bg-emerald-600 text-white" ${perfilAtual === 'professor' ? 'disabled' : ''}>Presente (P)</button>
-                                <button type="button" data-aluno-id="${a.id}" data-status="F" onclick="alternarPresencaBtn(this, 'F')" class="btn-presenca px-4 py-1.5 text-xs font-bold rounded-r-lg border border-slate-300 bg-white text-slate-600 hover:bg-slate-50" ${perfilAtual === 'professor' ? 'disabled' : ''}>Ausente (F)</button>
-                            </div>
-                            <div id="box-justificativa-${a.id}" class="hidden w-full sm:w-auto">
-                                <select id="select-justificativa-${a.id}" class="bg-amber-50 border border-amber-300 text-amber-900 text-xs rounded-lg p-1.5 font-medium" ${perfilAtual === 'professor' ? 'disabled' : ''}>
-                                    <option value="Sem Justificativa">Sem Justificativa / Não informada</option>
-                                    <option value="Atestado Médico">Atestado Médico</option>
-                                    <option value="Problema de Saúde sem Atestado">Problema de Saúde (Sem Atestado)</option>
-                                    <option value="Problema de Transporte">Problema de Transporte</option>
-                                    <option value="Motivo Familiar">Motivo Familiar</option>
-                                    <option value="Outros">Outros Motivos</option>
-                                </select>
-                            </div>
-                        </div>
-                    </td>
-                </tr>
-            `).join('');
+            tabelaCorpo.innerHTML = alunosTurma.map(a => {
+                const eTransferido = a.status === 'TRANSFERIDO';
+                return `
+                    <tr class="hover:bg-slate-50 ${eTransferido ? 'bg-slate-100/70 opacity-60' : ''}">
+                        <td class="p-3 font-mono text-xs text-slate-500">${a.ra}</td>
+                        <td class="p-3 font-medium text-slate-800">
+                            ${a.nome}
+                            ${eTransferido ? `<span class="ml-2 text-[10px] bg-rose-100 text-rose-800 font-bold px-2 py-0.5 rounded border border-rose-300">TRANSFERIDO</span>` : ''}
+                        </td>
+                        <td class="p-3">
+                            <span class="text-xs px-2 py-0.5 rounded-full font-semibold ${a.bolsaFamilia === 'SIM' ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-500'}">
+                                ${a.bolsaFamilia === 'SIM' ? 'Bolsa Família' : 'Não Beneficiário'}
+                            </span>
+                        </td>
+                        <td class="p-3 text-center">
+                            ${eTransferido ? `
+                                <span class="text-xs text-slate-500 font-semibold italic">
+                                    <i class="fa-solid fa-ban mr-1 text-rose-500"></i> Aluno Inativo / Transferido
+                                </span>
+                            ` : `
+                                <div class="flex flex-col sm:flex-row items-center justify-center gap-2">
+                                    <div class="inline-flex rounded-md shadow-sm" role="group">
+                                        <button type="button" data-aluno-id="${a.id}" data-status="P" onclick="alternarPresencaBtn(this, 'P')" class="btn-presenca px-4 py-1.5 text-xs font-bold rounded-l-lg border border-slate-300 bg-emerald-600 text-white" ${perfilAtual === 'professor' ? 'disabled' : ''}>Presente (P)</button>
+                                        <button type="button" data-aluno-id="${a.id}" data-status="F" onclick="alternarPresencaBtn(this, 'F')" class="btn-presenca px-4 py-1.5 text-xs font-bold rounded-r-lg border border-slate-300 bg-white text-slate-600 hover:bg-slate-50" ${perfilAtual === 'professor' ? 'disabled' : ''}>Ausente (F)</button>
+                                    </div>
+                                    <div id="box-justificativa-${a.id}" class="hidden w-full sm:w-auto">
+                                        <select id="select-justificativa-${a.id}" class="bg-amber-50 border border-amber-300 text-amber-900 text-xs rounded-lg p-1.5 font-medium" ${perfilAtual === 'professor' ? 'disabled' : ''}>
+                                            <option value="Sem Justificativa">Sem Justificativa / Não informada</option>
+                                            <option value="Atestado Médico">Atestado Médico</option>
+                                            <option value="Problema de Saúde sem Atestado">Problema de Saúde (Sem Atestado)</option>
+                                            <option value="Problema de Transporte">Problema de Transporte</option>
+                                            <option value="Motivo Familiar">Motivo Familiar</option>
+                                            <option value="Outros">Outros Motivos</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            `}
+                        </td>
+                    </tr>
+                `;
+            }).join('');
         }
 
         function alternarPresencaBtn(btn, status) {
@@ -816,20 +858,17 @@
             }
 
             const turmaSelecionada = document.getElementById('chamada-turma-select').value;
-            const alunosTurma = appState.alunos.filter(a => a.turma === turmaSelecionada);
+            const alunosTurma = appState.alunos.filter(a => a.turma === turmaSelecionada && a.status !== 'TRANSFERIDO');
 
             const batch = db.batch();
 
-            // Percorre cada aluno da turma para atualizar o registro daquela data exata (evita duplicidade)
             alunosTurma.forEach(aluno => {
                 const btnAusente = document.querySelector(`.btn-presenca[data-aluno-id="${aluno.id}"][data-status="F"].bg-rose-600`);
                 const bimestresExistentes = appState.faltasDetalhadas[aluno.id] || {};
                 let listaBimestre = bimestresExistentes[bimestre] || [];
 
-                // Remove qualquer registro anterior exatamente nesta mesma data para esta turma (substituição limpa)
                 listaBimestre = listaBimestre.filter(f => f.data !== dataChamada);
 
-                // Se estiver ausente nesta chamada, adiciona o novo registro de falta/justificativa
                 if (btnAusente) {
                     const selectJustificativa = document.getElementById(`select-justificativa-${aluno.id}`);
                     const justificativa = selectJustificativa ? selectJustificativa.value : 'Sem Justificativa';
@@ -842,7 +881,7 @@
             });
 
             await batch.commit();
-            showToast('Chamada atualizada com sucesso (sem duplicidade)!');
+            showToast('Chamada atualizada com sucesso!');
         }
 
         // ==================== BUSCA ATIVA ====================
@@ -854,11 +893,11 @@
             let alunosEmAlerta = appState.alunos.filter(aluno => {
                 const faltas = getFaltasAlunoBimestre(aluno.id, bimestre);
                 const atendeTurma = (turmaFiltro === 'TODAS' || aluno.turma === turmaFiltro);
-                return faltas.length >= 1 && atendeTurma;
+                return aluno.status !== 'TRANSFERIDO' && faltas.length >= 1 && atendeTurma;
             });
 
             if (alunosEmAlerta.length === 0) {
-                tabelaCorpo.innerHTML = '<tr><td colspan="6" class="p-4 text-center text-slate-400 text-xs">Nenhum aluno em situação de Busca Ativa para a seleção.</td></tr>';
+                tabelaCorpo.innerHTML = '<tr><td colspan="6" class="p-4 text-center text-slate-400 text-xs">Nenhum aluno ativo em situação de Busca Ativa para a seleção.</td></tr>';
                 return;
             }
 
@@ -993,6 +1032,7 @@
                 const percFrequencia = ((presencas / totalDiasLetivos) * 100).toFixed(1);
                 
                 const perdeuBeneficio = percFrequencia < 75.0;
+                const eTransferido = aluno.status === 'TRANSFERIDO';
 
                 const justificativasContagem = {};
                 faltasArray.forEach(f => {
@@ -1010,10 +1050,19 @@
                     })
                     .join('');
 
+                let dataTransfBR = '';
+                if (aluno.dataTransferencia) {
+                    const partes = aluno.dataTransferencia.split('-');
+                    if (partes.length === 3) dataTransfBR = `${partes[2]}/${partes[1]}/${partes[0]}`;
+                }
+
                 return `
-                    <tr class="hover:bg-slate-50 ${perdeuBeneficio ? 'bg-rose-50/50' : ''}">
+                    <tr class="hover:bg-slate-50 ${eTransferido ? 'bg-slate-100/80' : (perdeuBeneficio ? 'bg-rose-50/50' : '')}">
                         <td class="p-3 font-mono text-xs text-slate-500">${aluno.ra}</td>
-                        <td class="p-3 font-semibold text-slate-800">${aluno.nome}</td>
+                        <td class="p-3 font-semibold text-slate-800">
+                            ${aluno.nome}
+                            ${eTransferido ? `<span class="block text-[10px] text-rose-700 font-bold uppercase mt-0.5"><i class="fa-solid fa-right-from-bracket mr-1"></i> Transferido</span>` : ''}
+                        </td>
                         <td class="p-3 text-xs text-slate-600">${aluno.turma}</td>
                         <td class="p-3 text-center font-semibold text-emerald-700">${presencas}</td>
                         <td class="p-3 text-center font-semibold text-rose-600">${faltas}</td>
@@ -1023,7 +1072,7 @@
                             </span>
                         </td>
                         <td class="p-3 text-left">
-                            <div class="mb-1.5">
+                            <div class="mb-1.5 flex flex-wrap gap-1 items-center">
                                 ${perdeuBeneficio ? 
                                     `<span class="bg-rose-600 text-white font-bold text-xs px-2.5 py-1 rounded-full shadow-sm inline-block">
                                         <i class="fa-solid fa-triangle-exclamation mr-1"></i> PERDEU BENEFÍCIO (<75%)
@@ -1033,12 +1082,20 @@
                                     </span>`
                                 }
                             </div>
+
+                            ${eTransferido ? `
+                                <div class="mt-1 p-2 bg-rose-50 border border-rose-200 rounded-lg text-xs text-rose-900">
+                                    <p class="font-bold"><i class="fa-solid fa-graduation-cap text-rose-600 mr-1"></i> ALUNO TRANSFERIDO</p>
+                                    <p class="text-[11px] mt-0.5"><strong>Data:</strong> ${dataTransfBR || 'Não informada'} | <strong>Destino:</strong> ${aluno.escolaDestino || 'Não informada'}</p>
+                                </div>
+                            ` : ''}
+
                             ${faltas > 0 ? `
                                 <div class="mt-1 pt-1 border-t border-slate-200/60">
-                                    <p class="text-[10px] font-bold text-slate-500 uppercase mb-1">Justificativas Registradas para Apontamento:</p>
+                                    <p class="text-[10px] font-bold text-slate-500 uppercase mb-1">Justificativas Registradas:</p>
                                     <div class="flex flex-wrap">${htmlJustificativas}</div>
                                 </div>
-                            ` : '<span class="text-[11px] text-slate-400 italic">Sem faltas registradas no bimestre</span>'}
+                            ` : '<span class="text-[11px] text-slate-400 italic block mt-1">Sem faltas registradas no bimestre</span>'}
                         </td>
                     </tr>
                 `;
@@ -1055,27 +1112,50 @@
                 if (thAcoes) thAcoes.classList.remove('hidden');
             }
 
-            tabelaCorpo.innerHTML = appState.alunos.map(aluno => `
-                <tr class="hover:bg-slate-50">
-                    <td class="p-3 font-mono text-xs text-slate-500">${aluno.ra}</td>
-                    <td class="p-3 font-bold text-slate-800">${aluno.nome}</td>
-                    <td class="p-3 text-xs">${aluno.turma}</td>
-                    <td class="p-3 text-xs text-slate-700 font-medium">${aluno.responsavel || '-'}</td>
-                    <td class="p-3 text-xs text-slate-700 font-medium">${aluno.tutor || '-'}</td>
-                    <td class="p-3 text-xs text-slate-600">${aluno.telefone}</td>
-                    <td class="p-3">
-                        <span class="text-xs px-2 py-0.5 rounded-full font-bold ${aluno.bolsaFamilia === 'SIM' ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-500'}">
-                            ${aluno.bolsaFamilia}
-                        </span>
-                    </td>
-                    ${perfilAtual === 'secretaria' ? `
-                        <td class="p-3 text-center space-x-2">
-                            <button onclick="editarAluno('${aluno.id}')" class="text-brand-600 hover:text-brand-800"><i class="fa-solid fa-pen-to-square"></i></button>
-                            <button onclick="excluirAluno('${aluno.id}')" class="text-rose-500 hover:text-rose-700"><i class="fa-solid fa-trash-can"></i></button>
+            tabelaCorpo.innerHTML = appState.alunos.map(aluno => {
+                const eTransferido = aluno.status === 'TRANSFERIDO';
+                return `
+                    <tr class="hover:bg-slate-50 ${eTransferido ? 'bg-slate-50/70' : ''}">
+                        <td class="p-3 font-mono text-xs text-slate-500">${aluno.ra}</td>
+                        <td class="p-3 font-bold text-slate-800">${aluno.nome}</td>
+                        <td class="p-3 text-xs">${aluno.turma}</td>
+                        <td class="p-3 text-xs">
+                            ${eTransferido ? `
+                                <span class="bg-rose-100 text-rose-800 font-bold px-2 py-0.5 rounded-full border border-rose-300 text-[11px]">
+                                    TRANSFERIDO
+                                </span>
+                            ` : `
+                                <span class="bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full border border-emerald-300 text-[11px]">
+                                    ATIVO
+                                </span>
+                            `}
                         </td>
-                    ` : ''}
-                </tr>
-            `).join('');
+                        <td class="p-3 text-xs text-slate-700 font-medium">${aluno.responsavel || '-'}</td>
+                        <td class="p-3 text-xs text-slate-600">${aluno.telefone}</td>
+                        <td class="p-3">
+                            <span class="text-xs px-2 py-0.5 rounded-full font-bold ${aluno.bolsaFamilia === 'SIM' ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-500'}">
+                                ${aluno.bolsaFamilia}
+                            </span>
+                        </td>
+                        ${perfilAtual === 'secretaria' ? `
+                            <td class="p-3 text-center space-x-2">
+                                <button onclick="editarAluno('${aluno.id}')" class="text-brand-600 hover:text-brand-800"><i class="fa-solid fa-pen-to-square"></i></button>
+                                <button onclick="excluirAluno('${aluno.id}')" class="text-rose-500 hover:text-rose-700"><i class="fa-solid fa-trash-can"></i></button>
+                            </td>
+                        ` : ''}
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function alternarCamposTransferencia() {
+            const status = document.getElementById('form-aluno-status').value;
+            const box = document.getElementById('box-transferencia');
+            if (status === 'TRANSFERIDO') {
+                box.classList.remove('hidden');
+            } else {
+                box.classList.add('hidden');
+            }
         }
 
         function abrirModalAluno() {
@@ -1084,10 +1164,15 @@
             document.getElementById('form-aluno-nome').value = '';
             document.getElementById('form-aluno-ra').value = '';
             document.getElementById('form-aluno-turma').value = '';
+            document.getElementById('form-aluno-status').value = 'ATIVO';
+            document.getElementById('form-aluno-data-transf').value = '';
+            document.getElementById('form-aluno-escola-destino').value = '';
             document.getElementById('form-aluno-responsavel').value = '';
             document.getElementById('form-aluno-tutor').value = '';
             document.getElementById('form-aluno-tel').value = '';
             document.getElementById('form-aluno-bolsa').value = 'SIM';
+            
+            alternarCamposTransferencia();
             document.getElementById('modal-aluno-titulo').innerText = 'Novo Aluno';
             document.getElementById('modal-aluno').classList.remove('hidden');
         }
@@ -1101,11 +1186,15 @@
             document.getElementById('form-aluno-nome').value = aluno.nome;
             document.getElementById('form-aluno-ra').value = aluno.ra;
             document.getElementById('form-aluno-turma').value = aluno.turma;
+            document.getElementById('form-aluno-status').value = aluno.status || 'ATIVO';
+            document.getElementById('form-aluno-data-transf').value = aluno.dataTransferencia || '';
+            document.getElementById('form-aluno-escola-destino').value = aluno.escolaDestino || '';
             document.getElementById('form-aluno-responsavel').value = aluno.responsavel || '';
             document.getElementById('form-aluno-tutor').value = aluno.tutor || '';
             document.getElementById('form-aluno-tel').value = aluno.telefone;
             document.getElementById('form-aluno-bolsa').value = aluno.bolsaFamilia;
 
+            alternarCamposTransferencia();
             document.getElementById('modal-aluno-titulo').innerText = 'Editar Aluno';
             document.getElementById('modal-aluno').classList.remove('hidden');
         }
@@ -1120,6 +1209,9 @@
             const nome = document.getElementById('form-aluno-nome').value.trim();
             const ra = document.getElementById('form-aluno-ra').value.trim();
             const turma = document.getElementById('form-aluno-turma').value.trim();
+            const status = document.getElementById('form-aluno-status').value;
+            const dataTransferencia = document.getElementById('form-aluno-data-transf').value;
+            const escolaDestino = document.getElementById('form-aluno-escola-destino').value.trim();
             const responsavel = document.getElementById('form-aluno-responsavel').value.trim();
             const tutor = document.getElementById('form-aluno-tutor').value.trim();
             const telefone = document.getElementById('form-aluno-tel').value.trim();
@@ -1130,7 +1222,18 @@
                 return;
             }
 
-            const alunoDados = { nome, ra, turma, responsavel, tutor, telefone, bolsaFamilia };
+            const alunoDados = { 
+                nome, 
+                ra, 
+                turma, 
+                status, 
+                dataTransferencia: status === 'TRANSFERIDO' ? dataTransferencia : '', 
+                escolaDestino: status === 'TRANSFERIDO' ? escolaDestino : '', 
+                responsavel, 
+                tutor, 
+                telefone, 
+                bolsaFamilia 
+            };
 
             if (id) {
                 await db.collection("alunos").doc(id).update(alunoDados);
@@ -1139,7 +1242,7 @@
             }
 
             fecharModalAluno();
-            showToast('Aluno salvo no banco de dados!');
+            showToast('Dados do aluno salvos na nuvem!');
         }
 
         async function excluirAluno(id) {
