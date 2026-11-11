@@ -58,7 +58,7 @@
                     </div>
                     <div>
                         <h1 class="font-bold text-lg leading-tight">GE-Escolar Pro</h1>
-                        <p class="text-xs text-brand-100">Frequência, Busca Ativa & Bolsa Família</p>
+                        <p class="text-xs text-brand-100">EE Professor José Carlos Donadeli Panice</p>
                     </div>
                 </div>
                 <div class="flex items-center space-x-4">
@@ -98,6 +98,10 @@
                         Busca Ativa
                     </span>
                     <span id="badge-busca-ativa" class="bg-rose-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">0</span>
+                </button>
+                <button onclick="switchTab('relatorios-busca')" id="tab-relatorios-busca" class="nav-btn flex items-center w-full px-4 py-3 text-sm font-medium rounded-lg text-slate-600 hover:bg-slate-50 hover:text-brand-600 transition-colors">
+                    <i class="fa-solid fa-print w-5 mr-3 text-lg text-indigo-600"></i>
+                    Relatórios Busca Ativa
                 </button>
                 <button onclick="switchTab('bolsa-familia')" id="tab-bolsa-familia" class="nav-btn flex items-center w-full px-4 py-3 text-sm font-medium rounded-lg text-slate-600 hover:bg-slate-50 hover:text-brand-600 transition-colors">
                     <i class="fa-solid fa-hand-holding-dollar w-5 mr-3 text-lg text-emerald-600"></i>
@@ -181,9 +185,10 @@
             <section id="section-chamada" class="tab-content hidden space-y-6">
                 <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
                     <div class="flex justify-between items-center mb-4">
-                        <h2 class="text-xl font-bold text-slate-800">Consulta de Chamada Diária</h2>
+                        <h2 class="text-xl font-bold text-slate-800">Chamada Diária (Dia Independente)</h2>
                         <span id="aviso-perfil-chamada" class="text-xs bg-amber-100 text-amber-800 font-bold px-3 py-1 rounded-full hidden">Modo Consulta (Apenas Secretaria edita a chamada)</span>
                     </div>
+                    <p class="text-xs text-slate-500 mb-4">Ao mudar a data, o sistema abre com todos os alunos como Presentes (P) para você registrar as ausências daquele dia.</p>
 
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
                         <div>
@@ -198,7 +203,6 @@
                                 <option value="3">3º Bimestre</option>
                                 <option value="4">4º Bimestre</option>
                             </select>
-                            <p class="text-[10px] text-slate-400 mt-1">Identificado automaticamente pela data escolhida.</p>
                         </div>
                         <div>
                             <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Data da Chamada</label>
@@ -230,22 +234,37 @@
                 </div>
             </section>
 
-            <!-- TAB: BUSCA ATIVA (PROFESSOR PODE EDITAR AQUI) -->
+            <!-- TAB: BUSCA ATIVA -->
             <section id="section-busca-ativa" class="tab-content hidden space-y-6">
                 <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
                     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
                         <div>
                             <h2 class="text-xl font-bold text-slate-800">Painel de Busca Ativa Escolar</h2>
                             <p class="text-xs text-amber-600 font-semibold mt-1">
-                                <i class="fa-solid fa-triangle-exclamation"></i> Alunos ativos com 1 ou mais faltas entram automaticamente nesta lista. (Disponível para edição de Professores e Secretaria).
+                                <i class="fa-solid fa-triangle-exclamation"></i> Alunos ativos com 1 ou mais faltas no bimestre entram automaticamente nesta lista.
                             </p>
                         </div>
-                        <div class="flex gap-2">
-                            <select id="filtro-busca-turma" onchange="renderizarBuscaAtiva()" class="bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs">
-                                <option value="TODAS">Todas as Turmas</option>
-                            </select>
+                        <div class="flex flex-wrap items-center gap-3">
+                            <div>
+                                <label class="block text-[10px] font-semibold text-slate-500 uppercase mb-1">Data Específica:</label>
+                                <input type="date" id="filtro-busca-data" onchange="renderizarBuscaAtiva()" class="bg-slate-50 border border-slate-300 rounded-lg p-1.5 text-xs">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-semibold text-slate-500 uppercase mb-1">Turma / Sala:</label>
+                                <select id="filtro-busca-turma" onchange="renderizarBuscaAtiva()" class="bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs">
+                                    <option value="TODAS">Todas as Turmas (Geral)</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-semibold text-slate-500 uppercase mb-1">Professor Tutor:</label>
+                                <select id="filtro-busca-tutor" onchange="renderizarBuscaAtiva()" class="bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs">
+                                    <option value="TODOS">Todos os Tutores (Geral)</option>
+                                </select>
+                            </div>
                         </div>
                     </div>
+
+                    <div id="busca-ativa-resumo-dia" class="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg text-xs flex justify-between items-center text-amber-900 font-medium"></div>
 
                     <div class="overflow-x-auto rounded-lg border border-slate-200">
                         <table class="w-full text-left border-collapse">
@@ -253,14 +272,80 @@
                                 <tr class="bg-slate-100 text-xs font-semibold text-slate-600 uppercase">
                                     <th class="p-3 w-16 text-center">Nº</th>
                                     <th class="p-3">Aluno / RA</th>
-                                    <th class="p-3">Turma</th>
+                                    <th class="p-3">Turma / Tutor</th>
                                     <th class="p-3">Faltas & Justificativas</th>
-                                    <th class="p-3">Responsável / Tutor</th>
+                                    <th class="p-3">Responsável</th>
                                     <th class="p-3">Último Status</th>
                                     <th class="p-3 text-center">Ações</th>
                                 </tr>
                             </thead>
                             <tbody id="tabela-busca-ativa" class="divide-y divide-slate-200 text-sm"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB: RELATÓRIOS BUSCA ATIVA (IMPRESSÃO) -->
+            <section id="section-relatorios-busca" class="tab-content hidden space-y-6">
+                <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm print-container">
+                    <div class="flex justify-between items-center mb-6 no-print">
+                        <div>
+                            <h2 class="text-xl font-bold text-slate-800">Relatórios para Impressão - Busca Ativa</h2>
+                            <p class="text-xs text-slate-500">Emita listagens filtrando por data, turma e Professor Tutor.</p>
+                        </div>
+                        <button onclick="window.print()" class="bg-slate-800 hover:bg-slate-900 text-white text-sm px-4 py-2 rounded-lg flex items-center space-x-2">
+                            <i class="fa-solid fa-print"></i>
+                            <span>Imprimir Relatório</span>
+                        </button>
+                    </div>
+
+                    <div class="hidden print-only mb-6 text-center border-b pb-4">
+                        <h1 class="text-2xl font-bold uppercase">EE Professor José Carlos Donadeli Panice</h1>
+                        <h2 id="print-titulo-relatorio" class="text-lg font-bold text-slate-700 mt-1">Relatório de Busca Ativa</h2>
+                        <p class="text-xs text-slate-500 mt-1">Data de Emissão: <span id="print-data-emissao"></span></p>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-4 gap-4 mb-6 no-print bg-slate-50 p-4 rounded-xl border">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Tipo de Relatório</label>
+                            <select id="tipo-relatorio-select" onchange="renderizarRelatoriosBusca()" class="w-full bg-white border border-slate-300 rounded-lg p-2 text-xs font-semibold text-brand-700">
+                                <option value="faltosos-dia">1. Relatório de Faltosos do Dia</option>
+                                <option value="pendentes-busca">2. Relatório de Pendentes sem Busca Ativa</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Data de Referência</label>
+                            <input type="date" id="relatorio-data-input" onchange="renderizarRelatoriosBusca()" class="w-full bg-white border border-slate-300 rounded-lg p-2 text-xs">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Turma</label>
+                            <select id="relatorio-turma-select" onchange="renderizarRelatoriosBusca()" class="w-full bg-white border border-slate-300 rounded-lg p-2 text-xs">
+                                <option value="TODAS">Todas as Turmas</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Professor Tutor</label>
+                            <select id="relatorio-tutor-select" onchange="renderizarRelatoriosBusca()" class="w-full bg-white border border-slate-300 rounded-lg p-2 text-xs">
+                                <option value="TODOS">Todos os Tutores</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div id="relatorio-resumo-info" class="mb-4 p-3 bg-indigo-50 border border-indigo-200 rounded-lg text-xs font-semibold text-indigo-900"></div>
+
+                    <div class="overflow-x-auto rounded-lg border border-slate-200">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-slate-100 text-xs font-semibold text-slate-600 uppercase">
+                                    <th class="p-3 w-12 text-center">Nº</th>
+                                    <th class="p-3">RA</th>
+                                    <th class="p-3">Nome do Aluno</th>
+                                    <th class="p-3">Turma / Tutor</th>
+                                    <th class="p-3">Responsável / Telefone</th>
+                                    <th id="th-coluna-extra" class="p-3">Detalhes / Justificativa</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabela-relatorios-busca" class="divide-y divide-slate-200 text-sm"></tbody>
                         </table>
                     </div>
                 </div>
@@ -382,9 +467,9 @@
                                     <th class="p-3">RA</th>
                                     <th class="p-3">Aluno</th>
                                     <th class="p-3">Turma</th>
+                                    <th class="p-3">Professor Tutor</th>
                                     <th class="p-3">Status Matrícula</th>
-                                    <th class="p-3">Responsável Legal</th>
-                                    <th class="p-3">Telefone</th>
+                                    <th class="p-3">Responsável</th>
                                     <th class="p-3">Bolsa Família</th>
                                     <th id="th-acoes-aluno" class="p-3 text-center">Ações</th>
                                 </tr>
@@ -603,6 +688,11 @@
                     <input type="text" id="form-aluno-ra" class="w-full border rounded-lg p-2 bg-slate-50">
                 </div>
 
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Professor Tutor</label>
+                    <input type="text" id="form-aluno-tutor" placeholder="Ex: Prof. João Carlos" class="w-full border rounded-lg p-2 bg-slate-50">
+                </div>
+
                 <!-- CAMPO STATUS DA MATRÍCULA -->
                 <div class="p-3 bg-slate-50 rounded-lg border border-slate-200">
                     <label class="block text-xs font-bold text-slate-700 mb-1">Situação da Matrícula</label>
@@ -626,10 +716,6 @@
                 <div>
                     <label class="block text-xs font-semibold text-slate-600 mb-1">Nome do Responsável Legal</label>
                     <input type="text" id="form-aluno-responsavel" placeholder="Nome do responsável legal" class="w-full border rounded-lg p-2 bg-slate-50">
-                </div>
-                <div>
-                    <label class="block text-xs font-semibold text-slate-600 mb-1">Nome do Tutor</label>
-                    <input type="text" id="form-aluno-tutor" placeholder="Nome do tutor (se houver)" class="w-full border rounded-lg p-2 bg-slate-50">
                 </div>
                 <div>
                     <label class="block text-xs font-semibold text-slate-600 mb-1">Telefone Contato</label>
@@ -674,7 +760,6 @@
 
         let perfilAtual = "professor"; // INICIA COMO PROFESSOR
 
-        // VERIFICAÇÃO RIGOROSA DA SENHA 9999 DA SECRETARIA
         function tentarMudarPerfil(novoPerfil) {
             const seletor = document.getElementById('seletor-perfil');
 
@@ -708,7 +793,6 @@
             const btnNovaTurma = document.getElementById('btn-nova-turma-container');
             const btnSalvarConfig = document.getElementById('btn-salvar-config-container');
 
-            // Campos do calendário para bloqueio no modo professor
             for (let b = 1; b <= 4; b++) {
                 const i = document.getElementById(`config-b${b}-inicio`);
                 const f = document.getElementById(`config-b${b}-fim`);
@@ -831,6 +915,7 @@
             if (abaAtual === 'dashboard') renderizarDashboard();
             if (abaAtual === 'chamada') carregarAlunosParaChamada();
             if (abaAtual === 'busca-ativa') renderizarBuscaAtiva();
+            if (abaAtual === 'relatorios-busca') renderizarRelatoriosBusca();
             if (abaAtual === 'bolsa-familia') renderizarRelatorioBolsa();
             if (abaAtual === 'alunos') renderizarTabelaAlunos();
             if (abaAtual === 'config') carregarConfiguracoesCalendario();
@@ -856,6 +941,7 @@
             if (dataInput && selectBimestre) {
                 selectBimestre.value = identificarBimestrePorData(dataInput);
             }
+            carregarAlunosParaChamada();
         }
 
         function getDiasLetivosBimestre(bimestre) {
@@ -889,8 +975,17 @@
             const turmasSet = new Set([...listaTurmasNomes, ...appState.alunos.map(a => a.turma)]);
             const turmas = Array.from(turmasSet).sort();
 
+            const tutoresSet = new Set();
+            appState.alunos.forEach(a => {
+                if (a.tutor && a.tutor.trim() !== '') tutoresSet.add(a.tutor.trim());
+            });
+            const tutores = Array.from(tutoresSet).sort();
+
             const selectChamada = document.getElementById('chamada-turma-select');
             const selectBusca = document.getElementById('filtro-busca-turma');
+            const selectBuscaTutor = document.getElementById('filtro-busca-tutor');
+            const selectRelatorio = document.getElementById('relatorio-turma-select');
+            const selectRelatorioTutor = document.getElementById('relatorio-tutor-select');
             const selectBolsa = document.getElementById('bolsa-turma-select');
             const selectGestao = document.getElementById('filtro-gestao-turma');
             const selectFormAluno = document.getElementById('form-aluno-turma');
@@ -899,18 +994,31 @@
             selectChamada.innerHTML = turmas.map(t => `<option value="${t}">${t}</option>`).join('');
             if (valChamada) selectChamada.value = valChamada;
             
-            const opcaoTodas = '<option value="TODAS">Todas as Turmas</option>';
+            const opcaoTodasTurmas = '<option value="TODAS">Todas as Turmas (Geral)</option>';
+            const opcaoTodosTutores = '<option value="TODOS">Todos os Tutores (Geral)</option>';
             
             const valBusca = selectBusca.value;
-            selectBusca.innerHTML = opcaoTodas + turmas.map(t => `<option value="${t}">${t}</option>`).join('');
+            selectBusca.innerHTML = opcaoTodasTurmas + turmas.map(t => `<option value="${t}">${t}</option>`).join('');
             if (valBusca) selectBusca.value = valBusca;
 
+            const valBuscaTutor = selectBuscaTutor.value;
+            selectBuscaTutor.innerHTML = opcaoTodosTutores + tutores.map(t => `<option value="${t}">${t}</option>`).join('');
+            if (valBuscaTutor) selectBuscaTutor.value = valBuscaTutor;
+
+            const valRel = selectRelatorio.value;
+            selectRelatorio.innerHTML = '<option value="TODAS">Todas as Turmas</option>' + turmas.map(t => `<option value="${t}">${t}</option>`).join('');
+            if (valRel) selectRelatorio.value = valRel;
+
+            const valRelTutor = selectRelatorioTutor.value;
+            selectRelatorioTutor.innerHTML = '<option value="TODOS">Todos os Tutores</option>' + tutores.map(t => `<option value="${t}">${t}</option>`).join('');
+            if (valRelTutor) selectRelatorioTutor.value = valRelTutor;
+
             const valBolsa = selectBolsa.value;
-            selectBolsa.innerHTML = opcaoTodas + turmas.map(t => `<option value="${t}">${t}</option>`).join('');
+            selectBolsa.innerHTML = '<option value="TODAS">Todas as Turmas</option>' + turmas.map(t => `<option value="${t}">${t}</option>`).join('');
             if (valBolsa) selectBolsa.value = valBolsa;
 
             const valGestao = selectGestao.value;
-            selectGestao.innerHTML = opcaoTodas + turmas.map(t => `<option value="${t}">${t}</option>`).join('');
+            selectGestao.innerHTML = '<option value="TODAS">Todas as Turmas</option>' + turmas.map(t => `<option value="${t}">${t}</option>`).join('');
             if (valGestao) selectGestao.value = valGestao;
 
             if (selectFormAluno) {
@@ -979,7 +1087,10 @@
             const alunosAtivos = appState.alunos.filter(a => a.status !== 'TRANSFERIDO');
             const totalAlunos = alunosAtivos.length;
             const bolsaAlunos = appState.alunos.filter(a => a.bolsaFamilia === 'SIM');
-            const bimestreAtual = 1;
+            
+            // Verifica o bimestre atual com base na data de hoje
+            const hojeStr = new Date().toISOString().split('T')[0];
+            const bimestreAtual = parseInt(identificarBimestrePorData(hojeStr));
 
             let contBuscaAtiva = 0;
             let contBolsaRisco = 0;
@@ -1003,18 +1114,18 @@
             document.getElementById('dash-bolsa-risco').innerText = contBolsaRisco;
 
             const listaBuscaEl = document.getElementById('dash-lista-busca');
-            const alunosRisco = alunosAtivos.filter(a => getFaltasAlunoBimestre(a.id, 1).length >= 1).slice(0, 4);
+            const alunosRisco = alunosAtivos.filter(a => getFaltasAlunoBimestre(a.id, bimestreAtual).length >= 1).slice(0, 4);
 
             if (alunosRisco.length === 0) {
                 listaBuscaEl.innerHTML = '<p class="text-xs text-slate-400">Nenhum aluno ativo em alerta de faltas no momento.</p>';
             } else {
                 listaBuscaEl.innerHTML = alunosRisco.map(a => {
-                    const faltas = getFaltasAlunoBimestre(a.id, 1).length;
+                    const faltas = getFaltasAlunoBimestre(a.id, bimestreAtual).length;
                     return `
                         <div class="flex items-center justify-between p-2.5 bg-slate-50 rounded-lg border border-slate-100 text-xs">
                             <div>
                                 <span class="font-bold text-slate-800">[Nº ${a.numero || '-'}] ${a.nome}</span>
-                                <span class="text-slate-400 block">${a.turma} • Responsável: ${a.responsavel || a.tutor || 'Não Informado'}</span>
+                                <span class="text-slate-400 block">${a.turma} • Tutor: ${a.tutor || 'Não Informado'}</span>
                             </div>
                             <span class="bg-amber-100 text-amber-800 font-bold px-2 py-1 rounded">${faltas} Falta(s)</span>
                         </div>
@@ -1035,7 +1146,7 @@
             }).join('');
         }
 
-        // ==================== CHAMADA DIÁRIA (APENAS CONSULTA PARA PROFESSOR) ====================
+        // ==================== CHAMADA DIÁRIA ====================
         function carregarAlunosParaChamada() {
             const turma = document.getElementById('chamada-turma-select').value;
             const alunosTurma = appState.alunos
@@ -1044,6 +1155,7 @@
             
             const tabelaCorpo = document.getElementById('tabela-chamada-corpo');
             const bimestreAtual = document.getElementById('chamada-bimestre-select').value;
+            const dataSelecionada = document.getElementById('chamada-data-input').value;
 
             if (!turma || alunosTurma.length === 0) {
                 tabelaCorpo.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-slate-400 text-xs">Nenhum aluno cadastrado nesta turma.</td></tr>';
@@ -1053,8 +1165,7 @@
             tabelaCorpo.innerHTML = alunosTurma.map(a => {
                 const eTransferido = a.status === 'TRANSFERIDO';
                 const faltasBimestre = getFaltasAlunoBimestre(a.id, bimestreAtual);
-                const dataSelecionada = document.getElementById('chamada-data-input').value;
-                const estaFaltando = faltasBimestre.some(f => f.data === dataSelecionada);
+                const estaFaltandoNoDia = faltasBimestre.some(f => f.data === dataSelecionada);
 
                 return `
                     <tr class="hover:bg-slate-50 ${eTransferido ? 'bg-slate-100/70 opacity-60' : ''}">
@@ -1073,18 +1184,16 @@
                             ${eTransferido ? `
                                 <span class="text-xs text-slate-500 font-semibold italic">Aluno Transferido</span>
                             ` : (perfilAtual === 'professor' ? `
-                                <!-- MODO CONSULTA PARA PROFESSOR -->
-                                <span class="px-3 py-1 rounded text-xs font-bold ${estaFaltando ? 'bg-rose-100 text-rose-800' : 'bg-emerald-100 text-emerald-800'}">
-                                    ${estaFaltando ? 'Ausente (F)' : 'Presente (P)'}
+                                <span class="px-3 py-1 rounded text-xs font-bold ${estaFaltandoNoDia ? 'bg-rose-100 text-rose-800' : 'bg-emerald-100 text-emerald-800'}">
+                                    ${estaFaltandoNoDia ? 'Ausente (F)' : 'Presente (P)'}
                                 </span>
                             ` : `
-                                <!-- MODO EDIÇÃO SECRETARIA -->
                                 <div class="flex flex-col sm:flex-row items-center justify-center gap-2">
                                     <div class="inline-flex rounded-md shadow-sm" role="group">
-                                        <button type="button" data-aluno-id="${a.id}" data-status="P" onclick="alternarPresencaBtn(this, 'P')" class="btn-presenca px-4 py-1.5 text-xs font-bold rounded-l-lg border border-slate-300 ${!estaFaltando ? 'bg-emerald-600 text-white' : 'bg-white text-slate-600'}">Presente (P)</button>
-                                        <button type="button" data-aluno-id="${a.id}" data-status="F" onclick="alternarPresencaBtn(this, 'F')" class="btn-presenca px-4 py-1.5 text-xs font-bold rounded-r-lg border border-slate-300 ${estaFaltando ? 'bg-rose-600 text-white' : 'bg-white text-slate-600'}">Ausente (F)</button>
+                                        <button type="button" data-aluno-id="${a.id}" data-status="P" onclick="alternarPresencaBtn(this, 'P')" class="btn-presenca px-4 py-1.5 text-xs font-bold rounded-l-lg border border-slate-300 ${!estaFaltandoNoDia ? 'bg-emerald-600 text-white' : 'bg-white text-slate-600'}">Presente (P)</button>
+                                        <button type="button" data-aluno-id="${a.id}" data-status="F" onclick="alternarPresencaBtn(this, 'F')" class="btn-presenca px-4 py-1.5 text-xs font-bold rounded-r-lg border border-slate-300 ${estaFaltandoNoDia ? 'bg-rose-600 text-white' : 'bg-white text-slate-600'}">Ausente (F)</button>
                                     </div>
-                                    <div id="box-justificativa-${a.id}" class="${estaFaltando ? '' : 'hidden'} w-full sm:w-auto">
+                                    <div id="box-justificativa-${a.id}" class="${estaFaltandoNoDia ? '' : 'hidden'} w-full sm:w-auto">
                                         <select id="select-justificativa-${a.id}" class="bg-amber-50 border border-amber-300 text-amber-900 text-xs rounded-lg p-1.5 font-medium">
                                             <option value="Sem Justificativa">Sem Justificativa</option>
                                             <option value="Atestado Médico">Atestado Médico</option>
@@ -1168,25 +1277,64 @@
         // ==================== BUSCA ATIVA ====================
         function renderizarBuscaAtiva() {
             const turmaFiltro = document.getElementById('filtro-busca-turma').value;
+            const tutorFiltro = document.getElementById('filtro-busca-tutor').value;
+            const dataFiltroInput = document.getElementById('filtro-busca-data');
+            const dataBuscaSelecionada = dataFiltroInput ? dataFiltroInput.value : new Date().toISOString().split('T')[0];
+
+            // Identifica corretamente o bimestre com base na data selecionada no filtro
+            const bimestreDinamico = parseInt(identificarBimestrePorData(dataBuscaSelecionada));
+
             const tabelaCorpo = document.getElementById('tabela-busca-ativa');
-            const bimestre = 1;
+            const resumoDiaEl = document.getElementById('busca-ativa-resumo-dia');
 
             let alunosEmAlerta = appState.alunos.filter(aluno => {
-                const faltas = getFaltasAlunoBimestre(aluno.id, bimestre);
+                const faltas = getFaltasAlunoBimestre(aluno.id, bimestreDinamico);
                 const atendeTurma = (turmaFiltro === 'TODAS' || aluno.turma === turmaFiltro);
-                return aluno.status !== 'TRANSFERIDO' && faltas.length >= 1 && atendeTurma;
+                const atendeTutor = (tutorFiltro === 'TODOS' || (aluno.tutor && aluno.tutor.trim() === tutorFiltro));
+                return aluno.status !== 'TRANSFERIDO' && faltas.length >= 1 && atendeTurma && atendeTutor;
             });
 
+            let faltososNaData = 0;
+            let semContatoNaData = 0;
+
+            alunosEmAlerta.forEach(aluno => {
+                const faltas = getFaltasAlunoBimestre(aluno.id, bimestreDinamico);
+                const faltouNoDia = faltas.some(f => f.data === dataBuscaSelecionada);
+                if (faltouNoDia) {
+                    faltososNaData++;
+                    const historico = appState.contatosBusca[aluno.id] || [];
+                    const temContatoNoDia = historico.some(h => h.data === dataBuscaSelecionada);
+                    if (!temContatoNoDia) {
+                        semContatoNaData++;
+                    }
+                }
+            });
+
+            if (resumoDiaEl) {
+                resumoDiaEl.innerHTML = `
+                    <span><i class="fa-solid fa-calendar-day mr-1"></i> Data: <strong>${dataBuscaSelecionada.split('-').reverse().join('/')}</strong> (${bimestreDinamico}º Bim.)</span>
+                    <span>Faltosos no Dia: <strong>${faltososNaData}</strong></span>
+                    <span class="${semContatoNaData > 0 ? 'text-rose-700 font-bold' : 'text-emerald-700 font-bold'}">
+                        <i class="fa-solid fa-bell mr-1"></i> Pendentes na Data: ${semContatoNaData}
+                    </span>
+                `;
+            }
+
+            document.getElementById('badge-busca-ativa').innerText = alunosEmAlerta.length;
+
             if (alunosEmAlerta.length === 0) {
-                tabelaCorpo.innerHTML = '<tr><td colspan="7" class="p-4 text-center text-slate-400 text-xs">Nenhum aluno ativo em situação de Busca Ativa para a seleção.</td></tr>';
+                tabelaCorpo.innerHTML = '<tr><td colspan="7" class="p-4 text-center text-slate-400 text-xs">Nenhum aluno ativo com faltas registradas no bimestre correspondente à data selecionada.</td></tr>';
                 return;
             }
 
             tabelaCorpo.innerHTML = alunosEmAlerta.map(aluno => {
-                const faltasArray = getFaltasAlunoBimestre(aluno.id, bimestre);
+                const faltasArray = getFaltasAlunoBimestre(aluno.id, bimestreDinamico);
                 const totalFaltas = faltasArray.length;
                 const historico = appState.contatosBusca[aluno.id] || [];
                 const ultimoContato = historico.length > 0 ? historico[historico.length - 1] : null;
+
+                const faltouNoDia = faltasArray.some(f => f.data === dataBuscaSelecionada);
+                const temContatoNoDia = historico.some(h => h.data === dataBuscaSelecionada);
 
                 const justificativasContagem = {};
                 faltasArray.forEach(f => {
@@ -1198,27 +1346,32 @@
 
                 let statusBadge = '<span class="bg-rose-100 text-rose-800 text-xs px-2 py-1 rounded-full font-bold">Contato Pendente</span>';
                 if (ultimoContato) {
-                    statusBadge = `<span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full font-semibold">${ultimoContato.status}</span>`;
+                    statusBadge = `<span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-semibold">${ultimoContato.status}</span>`;
                 }
 
-                const contatoPrincipal = aluno.responsavel || aluno.tutor || 'Não Informado';
+                const alertaDataPendente = (faltouNoDia && !temContatoNoDia);
+                const responsavel = aluno.responsavel || 'Não Informado';
 
                 return `
-                    <tr class="hover:bg-slate-50">
+                    <tr class="hover:bg-slate-50 ${alertaDataPendente ? 'bg-amber-50/60 border-l-4 border-amber-500' : ''}">
                         <td class="p-3 text-center font-bold text-slate-700">${aluno.numero || '-'}</td>
                         <td class="p-3">
                             <span class="font-bold text-slate-800 block">${aluno.nome}</span>
                             <span class="text-xs font-mono text-slate-400">RA: ${aluno.ra}</span>
+                            ${alertaDataPendente ? '<span class="inline-block mt-1 bg-amber-200 text-amber-900 font-bold text-[10px] px-2 py-0.5 rounded">Faltou na data sem contato!</span>' : ''}
                         </td>
-                        <td class="p-3 text-xs text-slate-600">${aluno.turma}</td>
+                        <td class="p-3 text-xs">
+                            <span class="font-bold text-slate-700 block">${aluno.turma}</span>
+                            <span class="text-slate-500"><i class="fa-solid fa-user-tie text-brand-600 mr-1"></i> Tutor: <strong>${aluno.tutor || 'Não atribuído'}</strong></span>
+                        </td>
                         <td class="p-3">
                             <span class="bg-amber-100 text-amber-900 font-extrabold text-xs px-2 py-0.5 rounded-md inline-block mb-1">
-                                ${totalFaltas} Falta(s)
+                                ${totalFaltas} Falta(s) Totais
                             </span>
                             ${resJustificativas}
                         </td>
                         <td class="p-3 text-xs">
-                            <p class="font-semibold text-slate-700">${contatoPrincipal}</p>
+                            <p class="font-semibold text-slate-700">${responsavel}</p>
                             <p class="text-slate-500">${aluno.telefone}</p>
                         </td>
                         <td class="p-3">${statusBadge}</td>
@@ -1232,13 +1385,122 @@
             }).join('');
         }
 
+        // ==================== RELATÓRIOS BUSCA ATIVA (IMPRESSÃO) ====================
+        function renderizarRelatoriosBusca() {
+            const tipo = document.getElementById('tipo-relatorio-select').value;
+            const dataInput = document.getElementById('relatorio-data-input');
+            const dataRef = dataInput ? dataInput.value : new Date().toISOString().split('T')[0];
+            const turmaFiltro = document.getElementById('relatorio-turma-select').value;
+            const tutorFiltro = document.getElementById('relatorio-tutor-select').value;
+            
+            const bimestreDinamico = parseInt(identificarBimestrePorData(dataRef));
+
+            const tituloEl = document.getElementById('print-titulo-relatorio');
+            const resumoEl = document.getElementById('relatorio-resumo-info');
+            const thExtra = document.getElementById('th-coluna-extra');
+            const tabelaCorpo = document.getElementById('tabela-relatorios-busca');
+
+            document.getElementById('print-data-emissao').innerText = new Date().toLocaleDateString('pt-BR');
+            const dataBR = dataRef.split('-').reverse().join('/');
+
+            if (tipo === 'faltosos-dia') {
+                tituloEl.innerText = `Relatório de Alunos Faltosos do Dia (${dataBR})`;
+                thExtra.innerText = "Justificativa Registrada na Chamada";
+
+                const faltosos = appState.alunos.filter(aluno => {
+                    if (aluno.status === 'TRANSFERIDO') return false;
+                    if (turmaFiltro !== 'TODAS' && aluno.turma !== turmaFiltro) return false;
+                    if (tutorFiltro !== 'TODOS' && (!aluno.tutor || aluno.tutor.trim() !== tutorFiltro)) return false;
+                    const faltas = getFaltasAlunoBimestre(aluno.id, bimestreDinamico);
+                    return faltas.some(f => f.data === dataRef);
+                });
+
+                resumoEl.innerHTML = `Data: ${dataBR} (${bimestreDinamico}º Bim.) | Turma: ${turmaFiltro} | Tutor: ${tutorFiltro} | Total Faltosos: ${faltosos.length}`;
+
+                if (faltosos.length === 0) {
+                    tabelaCorpo.innerHTML = '<tr><td colspan="6" class="p-4 text-center text-slate-400 text-xs">Nenhum aluno faltoso registrado nesta data para este filtro.</td></tr>';
+                    return;
+                }
+
+                tabelaCorpo.innerHTML = faltosos.map(aluno => {
+                    const faltas = getFaltasAlunoBimestre(aluno.id, bimestreDinamico);
+                    const faltaHoje = faltas.find(f => f.data === dataRef);
+                    const responsavel = aluno.responsavel || 'Não informado';
+
+                    return `
+                        <tr class="hover:bg-slate-50">
+                            <td class="p-3 text-center font-bold">${aluno.numero || '-'}</td>
+                            <td class="p-3 font-mono text-xs">${aluno.ra}</td>
+                            <td class="p-3 font-bold">${aluno.nome}</td>
+                            <td class="p-3 text-xs">
+                                <span class="font-bold">${aluno.turma}</span><br>
+                                <span class="text-slate-500">Tutor: ${aluno.tutor || 'Não atribuído'}</span>
+                            </td>
+                            <td class="p-3 text-xs">
+                                <p class="font-semibold">${responsavel}</p>
+                                <p class="text-slate-500">${aluno.telefone}</p>
+                            </td>
+                            <td class="p-3 text-xs font-semibold text-rose-700">${faltaHoje ? faltaHoje.justificativa : 'Sem Justificativa'}</td>
+                        </tr>
+                    `;
+                }).join('');
+
+            } else {
+                tituloEl.innerText = `Relatório de Pendências de Busca Ativa (${dataBR})`;
+                thExtra.innerText = "Status / Situação de Contato";
+
+                const pendentes = appState.alunos.filter(aluno => {
+                    if (aluno.status === 'TRANSFERIDO') return false;
+                    if (turmaFiltro !== 'TODAS' && aluno.turma !== turmaFiltro) return false;
+                    if (tutorFiltro !== 'TODOS' && (!aluno.tutor || aluno.tutor.trim() !== tutorFiltro)) return false;
+                    
+                    const faltas = getFaltasAlunoBimestre(aluno.id, bimestreDinamico);
+                    const faltouNoDia = faltas.some(f => f.data === dataRef);
+                    if (!faltouNoDia) return false;
+
+                    const historico = appState.contatosBusca[aluno.id] || [];
+                    const temContatoNoDia = historico.some(h => h.data === dataRef);
+                    return !temContatoNoDia;
+                });
+
+                resumoEl.innerHTML = `Data: ${dataBR} (${bimestreDinamico}º Bim.) | Turma: ${turmaFiltro} | Tutor: ${tutorFiltro} | Alunos SEM Contato: ${pendentes.length}`;
+
+                if (pendentes.length === 0) {
+                    tabelaCorpo.innerHTML = '<tr><td colspan="6" class="p-4 text-center text-slate-400 text-xs">Parabéns! Todos os faltosos desta data já tiveram contato registrado para este filtro.</td></tr>';
+                    return;
+                }
+
+                tabelaCorpo.innerHTML = pendentes.map(aluno => {
+                    const responsavel = aluno.responsavel || 'Não informado';
+                    return `
+                        <tr class="hover:bg-slate-50 bg-amber-50/40">
+                            <td class="p-3 text-center font-bold">${aluno.numero || '-'}</td>
+                            <td class="p-3 font-mono text-xs">${aluno.ra}</td>
+                            <td class="p-3 font-bold">${aluno.nome}</td>
+                            <td class="p-3 text-xs">
+                                <span class="font-bold">${aluno.turma}</span><br>
+                                <span class="text-slate-500">Tutor: ${aluno.tutor || 'Não atribuído'}</span>
+                            </td>
+                            <td class="p-3 text-xs">
+                                <p class="font-semibold">${responsavel}</p>
+                                <p class="text-slate-500">${aluno.telefone}</p>
+                            </td>
+                            <td class="p-3 text-xs">
+                                <span class="bg-rose-100 text-rose-800 font-bold px-2 py-0.5 rounded">Pendente de Contato</span>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+            }
+        }
+
         function abrirModalContato(alunoId) {
             const aluno = appState.alunos.find(a => a.id === alunoId);
             if (!aluno) return;
 
             document.getElementById('modal-aluno-id').value = aluno.id;
             document.getElementById('modal-aluno-nome').innerText = `[Nº ${aluno.numero || '-'}] ${aluno.nome} (RA: ${aluno.ra})`;
-            document.getElementById('contato-pessoa').value = aluno.responsavel || aluno.tutor || '';
+            document.getElementById('contato-pessoa').value = aluno.responsavel || '';
             document.getElementById('contato-obs').value = '';
 
             const historico = appState.contatosBusca[alunoId] || [];
@@ -1272,7 +1534,7 @@
             const status = document.getElementById('contato-status').value;
             const pessoa = document.getElementById('contato-pessoa').value;
             const obs = document.getElementById('contato-obs').value;
-            const dataHoje = new Date().toISOString().split('T')[0];
+            const dataHoje = document.getElementById('filtro-busca-data').value || new Date().toISOString().split('T')[0];
 
             const historicoAtual = appState.contatosBusca[alunoId] || [];
             historicoAtual.push({ data: dataHoje, meio, status, pessoa, obs });
@@ -1425,6 +1687,7 @@
                         <td class="p-3 font-mono text-xs text-slate-500">${aluno.ra}</td>
                         <td class="p-3 font-bold text-slate-800">${aluno.nome}</td>
                         <td class="p-3 text-xs">${aluno.turma}</td>
+                        <td class="p-3 text-xs font-semibold text-brand-700">${aluno.tutor || 'Não atribuído'}</td>
                         <td class="p-3 text-xs">
                             ${eTransferido ? `
                                 <span class="bg-rose-100 text-rose-800 font-bold px-2 py-0.5 rounded-full border border-rose-300 text-[11px]">
@@ -1437,7 +1700,6 @@
                             `}
                         </td>
                         <td class="p-3 text-xs text-slate-700 font-medium">${aluno.responsavel || '-'}</td>
-                        <td class="p-3 text-xs text-slate-600">${aluno.telefone}</td>
                         <td class="p-3">
                             <span class="text-xs px-2 py-0.5 rounded-full font-bold ${aluno.bolsaFamilia === 'SIM' ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-500'}">
                                 ${aluno.bolsaFamilia}
@@ -1470,11 +1732,11 @@
             document.getElementById('form-aluno-numero').value = '';
             document.getElementById('form-aluno-nome').value = '';
             document.getElementById('form-aluno-ra').value = '';
+            document.getElementById('form-aluno-tutor').value = '';
             document.getElementById('form-aluno-status').value = 'ATIVO';
             document.getElementById('form-aluno-data-transf').value = '';
             document.getElementById('form-aluno-escola-destino').value = '';
             document.getElementById('form-aluno-responsavel').value = '';
-            document.getElementById('form-aluno-tutor').value = '';
             document.getElementById('form-aluno-tel').value = '';
             document.getElementById('form-aluno-bolsa').value = 'SIM';
             
@@ -1493,11 +1755,11 @@
             document.getElementById('form-aluno-nome').value = aluno.nome;
             document.getElementById('form-aluno-ra').value = aluno.ra;
             document.getElementById('form-aluno-turma').value = aluno.turma;
+            document.getElementById('form-aluno-tutor').value = aluno.tutor || '';
             document.getElementById('form-aluno-status').value = aluno.status || 'ATIVO';
             document.getElementById('form-aluno-data-transf').value = aluno.dataTransferencia || '';
             document.getElementById('form-aluno-escola-destino').value = aluno.escolaDestino || '';
             document.getElementById('form-aluno-responsavel').value = aluno.responsavel || '';
-            document.getElementById('form-aluno-tutor').value = aluno.tutor || '';
             document.getElementById('form-aluno-tel').value = aluno.telefone;
             document.getElementById('form-aluno-bolsa').value = aluno.bolsaFamilia;
 
@@ -1517,11 +1779,11 @@
             const turma = document.getElementById('form-aluno-turma').value;
             const nome = document.getElementById('form-aluno-nome').value.trim();
             const ra = document.getElementById('form-aluno-ra').value.trim();
+            const tutor = document.getElementById('form-aluno-tutor').value.trim();
             const status = document.getElementById('form-aluno-status').value;
             const dataTransferencia = document.getElementById('form-aluno-data-transf').value;
             const escolaDestino = document.getElementById('form-aluno-escola-destino').value.trim();
             const responsavel = document.getElementById('form-aluno-responsavel').value.trim();
-            const tutor = document.getElementById('form-aluno-tutor').value.trim();
             const telefone = document.getElementById('form-aluno-tel').value.trim();
             const bolsaFamilia = document.getElementById('form-aluno-bolsa').value;
 
@@ -1535,11 +1797,11 @@
                 turma,
                 nome, 
                 ra, 
+                tutor,
                 status, 
                 dataTransferencia: status === 'TRANSFERIDO' ? dataTransferencia : '', 
                 escolaDestino: status === 'TRANSFERIDO' ? escolaDestino : '', 
                 responsavel, 
-                tutor, 
                 telefone, 
                 bolsaFamilia 
             };
@@ -1598,10 +1860,16 @@
 
         function definirDataHoje() {
             const hoje = new Date().toISOString().split('T')[0];
+            
             const inputData = document.getElementById('chamada-data-input');
-            if (inputData && !inputData.value) {
-                inputData.value = hoje;
-            }
+            if (inputData && !inputData.value) inputData.value = hoje;
+
+            const inputBuscaData = document.getElementById('filtro-busca-data');
+            if (inputBuscaData && !inputBuscaData.value) inputBuscaData.value = hoje;
+
+            const inputRelData = document.getElementById('relatorio-data-input');
+            if (inputRelData && !inputRelData.value) inputRelData.value = hoje;
+
             document.getElementById('print-data-hoje').innerText = new Date().toLocaleDateString('pt-BR');
             aoMudarDataChamada();
         }
