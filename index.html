@@ -66,7 +66,7 @@
                     <div class="bg-brand-800 px-3 py-1.5 rounded-lg border border-brand-700 flex items-center gap-2">
                         <span class="text-xs text-brand-100 font-semibold"><i class="fa-solid fa-user-shield mr-1"></i> Perfil:</span>
                         <select id="seletor-perfil" onchange="tentarMudarPerfil(this.value)" class="bg-brand-900 text-white text-xs font-bold rounded p-1 border border-brand-600 focus:outline-none">
-                            <option value="professor">Professor (Consulta Tudo / Edita Só Busca Ativa)</option>
+                            <option value="professor">professor</option>
                             <option value="secretaria">Secretaria / Gestão (Edição Total)</option>
                         </select>
                     </div>
@@ -241,7 +241,7 @@
                         <div>
                             <h2 class="text-xl font-bold text-slate-800">Painel de Busca Ativa Escolar</h2>
                             <p class="text-xs text-amber-600 font-semibold mt-1">
-                                <i class="fa-solid fa-triangle-exclamation"></i> Alunos ativos com 1 ou mais faltas no Bimestre entram automaticamente nesta lista.
+                                <i class="fa-solid fa-triangle-exclamation"></i> Alunos ativos faltosos na data selecionada entram automaticamente nesta lista.
                             </p>
                         </div>
                         <div class="flex flex-wrap items-center gap-3">
@@ -522,7 +522,7 @@
                             <h3 class="font-bold text-slate-800 text-sm"><i class="fa-solid fa-calendar text-brand-600 mr-2"></i> Marcação Visual de Dias Letivos (Clique no dia para ativar/desativar o L)</h3>
                             <div class="flex items-center gap-3 text-xs">
                                 <span class="flex items-center gap-1"><span class="w-3 h-3 bg-emerald-600 rounded"></span> Dia Letivo [L]</span>
-                                <span class="flex items-center gap-1"><span class="w-3 h-3 bg-slate-100 border rounded"></span> Não Letivo / Fim de Semana</span>
+                                <span class="flex items-center gap-1"><span class="w-3 h-3 bg-slate-100 border rounded"></span> Não Letivo / Domingo</span>
                             </div>
                         </div>
 
@@ -925,7 +925,7 @@
 
         // CONTAGEM REAL: Varre o dicionário de dias letivos marcados com "L" no intervalo exato do Período
         function contarDiasLetivosMarcadosNoPeriodo(dataInicioPeriodo, dataFimPeriodo) {
-            if (!appState.config || !appState.config.diasLetivos) return 40;
+            if (!appState.config || !appState.config.diasLetivos) return 0;
 
             let totalL = 0;
             const diasMarcados = appState.config.diasLetivos;
@@ -938,7 +938,7 @@
                 }
             });
 
-            return totalL > 0 ? totalL : 40; // Fallback se nenhum dia foi marcado ainda
+            return totalL;
         }
 
         function getFaltasAlunoPorIntervalo(alunoId, dataInicio, dataFim) {
@@ -1087,15 +1087,18 @@
             const totalAlunosAtivos = alunosAtivos.length;
             const bolsaAlunosAtivos = alunosAtivos.filter(a => a.bolsaFamilia === 'SIM');
             
-            const hojeStr = new Date().toISOString().split('T')[0];
-            const bimestreAtual = parseInt(identificarBimestrePorData(hojeStr));
+            const dataFiltroInput = document.getElementById('filtro-busca-data');
+            const dataHojeStr = dataFiltroInput && dataFiltroInput.value ? dataFiltroInput.value : new Date().toISOString().split('T')[0];
+            const bimestreAtual = parseInt(identificarBimestrePorData(dataHojeStr));
 
             let contBuscaAtiva = 0;
             let contBolsaRisco = 0;
 
+            // Busca Ativa na tela inicial agora contabiliza apenas os faltosos do dia atual selecionado
             alunosAtivos.forEach(aluno => {
                 const faltasArray = getFaltasAlunoBimestre(aluno.id, bimestreAtual);
-                if (faltasArray.length >= 1) contBuscaAtiva++;
+                const faltouNoDia = faltasArray.some(f => f.data === dataHojeStr);
+                if (faltouNoDia) contBuscaAtiva++;
             });
 
             const anoAtual = new Date().getFullYear();
@@ -1105,8 +1108,9 @@
 
             bolsaAlunosAtivos.forEach(aluno => {
                 const faltasArray = getFaltasAlunoPorIntervalo(aluno.id, bolsaBim1Inicio, bolsaBim1Fim);
-                const presencas = Math.max(0, diasBolsaBim1 - faltasArray.length);
-                const freq = (presencas / diasBolsaBim1) * 100;
+                const presencas = Math.max(0, (diasBolsaBim1 > 0 ? diasBolsaBim1 : 40) - faltasArray.length);
+                const divisor = diasBolsaBim1 > 0 ? diasBolsaBim1 : 40;
+                const freq = (presencas / divisor) * 100;
                 if (freq < 75) contBolsaRisco++;
             });
 
@@ -1116,20 +1120,24 @@
             document.getElementById('dash-bolsa-risco').innerText = contBolsaRisco;
 
             const listaBuscaEl = document.getElementById('dash-lista-busca');
-            const alunosRisco = alunosAtivos.filter(a => getFaltasAlunoBimestre(a.id, bimestreAtual).length >= 1).slice(0, 4);
+            const alunosRisco = alunosAtivos.filter(a => {
+                const faltasArray = getFaltasAlunoBimestre(a.id, bimestreAtual);
+                return faltasArray.some(f => f.data === dataHojeStr);
+            }).slice(0, 4);
 
             if (alunosRisco.length === 0) {
-                listaBuscaEl.innerHTML = '<p class="text-xs text-slate-400">Nenhum aluno ativo em alerta de faltas no momento.</p>';
+                listaBuscaEl.innerHTML = '<p class="text-xs text-slate-400">Nenhum aluno ativo em alerta de faltas para o dia de hoje.</p>';
             } else {
                 listaBuscaEl.innerHTML = alunosRisco.map(a => {
-                    const faltas = getFaltasAlunoBimestre(a.id, bimestreAtual).length;
+                    const faltasArray = getFaltasAlunoBimestre(a.id, bimestreAtual);
+                    const faltaHoje = faltasArray.find(f => f.data === dataHojeStr);
                     return `
                         <div class="flex items-center justify-between p-2.5 bg-slate-50 rounded-lg border border-slate-100 text-xs">
                             <div>
                                 <span class="font-bold text-slate-800">[Nº ${a.numero || '-'}] ${a.nome}</span>
                                 <span class="text-slate-400 block">${a.turma} • Tutor: ${a.tutor || 'Não Informado'}</span>
                             </div>
-                            <span class="bg-amber-100 text-amber-800 font-bold px-2 py-1 rounded">${faltas} Falta(s)</span>
+                            <span class="bg-amber-100 text-amber-800 font-bold px-2 py-1 rounded">${faltaHoje ? faltaHoje.justificativa : 'Falta Registrada'}</span>
                         </div>
                     `;
                 }).join('');
@@ -1138,12 +1146,9 @@
             const bimEl = document.getElementById('dash-bimestres-resumo');
             bimEl.innerHTML = [1,2,3,4].map(b => {
                 const info = (appState.config && appState.config.bimestres && appState.config.bimestres[b]) || {};
-                // Conta quantos L's tem naquele bimestre
                 let totalLBim = 0;
-                if (info.inicio && info.fim && appState.config.diasLetivos) {
-                    Object.keys(appState.config.diasLetivos).forEach(d => {
-                        if (appState.config.diasLetivos[d] === true && d >= info.inicio && d <= info.fim) totalLBim++;
-                    });
+                if (info.inicio && info.fim) {
+                    totalLBim = contarDiasLetivosMarcadosNoPeriodo(info.inicio, info.fim);
                 }
                 return `
                     <div class="p-3 bg-slate-50 rounded-lg border text-xs text-center">
@@ -1295,26 +1300,23 @@
             const tabelaCorpo = document.getElementById('tabela-busca-ativa');
             const resumoDiaEl = document.getElementById('busca-ativa-resumo-dia');
 
+            // Exibe apenas os faltosos do dia selecionado
             let alunosEmAlerta = appState.alunos.filter(aluno => {
                 const faltas = getFaltasAlunoBimestre(aluno.id, bimestreDinamico);
+                const faltouNoDia = faltas.some(f => f.data === dataBuscaSelecionada);
                 const atendeTurma = (turmaFiltro === 'TODAS' || aluno.turma === turmaFiltro);
                 const atendeTutor = (tutorFiltro === 'TODOS' || (aluno.tutor && aluno.tutor.trim() === tutorFiltro));
-                return aluno.status !== 'TRANSFERIDO' && faltas.length >= 1 && atendeTurma && atendeTutor;
+                return aluno.status !== 'TRANSFERIDO' && faltouNoDia && atendeTurma && atendeTutor;
             });
 
-            let faltososNaData = 0;
+            let faltososNaData = alunosEmAlerta.length;
             let semContatoNaData = 0;
 
             alunosEmAlerta.forEach(aluno => {
-                const faltas = getFaltasAlunoBimestre(aluno.id, bimestreDinamico);
-                const faltouNoDia = faltas.some(f => f.data === dataBuscaSelecionada);
-                if (faltouNoDia) {
-                    faltososNaData++;
-                    const historico = appState.contatosBusca[aluno.id] || [];
-                    const temContatoNoDia = historico.some(h => h.data === dataBuscaSelecionada);
-                    if (!temContatoNoDia) {
-                        semContatoNaData++;
-                    }
+                const historico = appState.contatosBusca[aluno.id] || [];
+                const temContatoNoDia = historico.some(h => h.data === dataBuscaSelecionada);
+                if (!temContatoNoDia) {
+                    semContatoNaData++;
                 }
             });
 
@@ -1328,55 +1330,44 @@
                 `;
             }
 
-            document.getElementById('badge-busca-ativa').innerText = alunosEmAlerta.length;
+            document.getElementById('badge-busca-ativa').innerText = faltososNaData;
 
             if (alunosEmAlerta.length === 0) {
-                tabelaCorpo.innerHTML = '<tr><td colspan="7" class="p-4 text-center text-slate-400 text-xs">Nenhum aluno ativo com faltas registradas no bimestre correspondente à data selecionada.</td></tr>';
+                tabelaCorpo.innerHTML = '<tr><td colspan="7" class="p-4 text-center text-slate-400 text-xs">Nenhum aluno faltoso registrado nesta data específica.</td></tr>';
                 return;
             }
 
             tabelaCorpo.innerHTML = alunosEmAlerta.map(aluno => {
                 const faltasArray = getFaltasAlunoBimestre(aluno.id, bimestreDinamico);
-                const totalFaltas = faltasArray.length;
+                const faltaHoje = faltasArray.find(f => f.data === dataBuscaSelecionada);
                 const historico = appState.contatosBusca[aluno.id] || [];
                 const ultimoContato = historico.length > 0 ? historico[historico.length - 1] : null;
 
-                const faltouNoDia = faltasArray.some(f => f.data === dataBuscaSelecionada);
                 const temContatoNoDia = historico.some(h => h.data === dataBuscaSelecionada);
-
-                const justificativasContagem = {};
-                faltasArray.forEach(f => {
-                    justificativasContagem[f.justificativa] = (justificativasContagem[f.justificativa] || 0) + 1;
-                });
-                const resJustificativas = Object.entries(justificativasContagem)
-                    .map(([motivo, qtd]) => `<span class="block text-[11px] text-slate-600">• ${motivo}: <strong>${qtd}</strong></span>`)
-                    .join('');
-
                 let statusBadge = '<span class="bg-rose-100 text-rose-800 text-xs px-2 py-1 rounded-full font-bold">Contato Pendente</span>';
                 if (ultimoContato) {
                     statusBadge = `<span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-semibold">${ultimoContato.status}</span>`;
                 }
 
-                const alertaDataPendente = (faltouNoDia && !temContatoNoDia);
                 const responsavel = aluno.responsavel || 'Não Informado';
 
                 return `
-                    <tr class="hover:bg-slate-50 ${alertaDataPendente ? 'bg-amber-50/60 border-l-4 border-amber-500' : ''}">
+                    <tr class="hover:bg-slate-50 ${!temContatoNoDia ? 'bg-amber-50/60 border-l-4 border-amber-500' : ''}">
                         <td class="p-3 text-center font-bold text-slate-700">${aluno.numero || '-'}</td>
                         <td class="p-3">
                             <span class="font-bold text-slate-800 block">${aluno.nome}</span>
                             <span class="text-xs font-mono text-slate-400">RA: ${aluno.ra}</span>
-                            ${alertaDataPendente ? '<span class="inline-block mt-1 bg-amber-200 text-amber-900 font-bold text-[10px] px-2 py-0.5 rounded">Faltou na data sem contato!</span>' : ''}
+                            ${!temContatoNoDia ? '<span class="inline-block mt-1 bg-amber-200 text-amber-900 font-bold text-[10px] px-2 py-0.5 rounded">Faltou na data sem contato!</span>' : ''}
                         </td>
                         <td class="p-3 text-xs">
                             <span class="font-bold text-slate-700 block">${aluno.turma}</span>
                             <span class="text-slate-500"><i class="fa-solid fa-user-tie text-brand-600 mr-1"></i> Tutor: <strong>${aluno.tutor || 'Não atribuído'}</strong></span>
                         </td>
                         <td class="p-3">
-                            <span class="bg-amber-100 text-amber-900 font-extrabold text-xs px-2 py-0.5 rounded-md inline-block mb-1">
-                                ${totalFaltas} Falta(s) Totais
+                            <span class="bg-rose-100 text-rose-900 font-extrabold text-xs px-2 py-0.5 rounded-md inline-block mb-1">
+                                Ausente no Dia
                             </span>
-                            ${resJustificativas}
+                            <span class="block text-[11px] text-slate-600">• ${faltaHoje ? faltaHoje.justificativa : 'Sem Justificativa'}</span>
                         </td>
                         <td class="p-3 text-xs">
                             <p class="font-semibold text-slate-700">${responsavel}</p>
@@ -1572,6 +1563,7 @@
             
             // CONTAGEM REAL DOS DIAS LETIVOS MARCADOS COM "L" NO CALENDÁRIO VISUAL
             const totalDiasLetivosReais = contarDiasLetivosMarcadosNoPeriodo(periodoSelecionado.inicio, periodoSelecionado.fim);
+            const divisorDias = totalDiasLetivosReais > 0 ? totalDiasLetivosReais : 40;
 
             document.getElementById('bolsa-metrica-header').innerHTML = `
                 <span><strong>Período Oficial:</strong> ${periodoSelecionado.nome}</span>
@@ -1589,8 +1581,8 @@
                     if (aluno.status === 'TRANSFERIDO') return false;
 
                     const faltasArray = getFaltasAlunoPorIntervalo(aluno.id, periodoSelecionado.inicio, periodoSelecionado.fim);
-                    const presencas = Math.max(0, totalDiasLetivosReais - faltasArray.length);
-                    const freq = (presencas / totalDiasLetivosReais) * 100;
+                    const presencas = Math.max(0, divisorDias - faltasArray.length);
+                    const freq = (presencas / divisorDias) * 100;
                     return freq < 75.0;
                 }
 
@@ -1607,8 +1599,8 @@
             tabelaCorpo.innerHTML = beneficiarios.map(aluno => {
                 const faltasArray = getFaltasAlunoPorIntervalo(aluno.id, periodoSelecionado.inicio, periodoSelecionado.fim);
                 const faltas = faltasArray.length;
-                const presencas = Math.max(0, totalDiasLetivosReais - faltas);
-                const percFrequencia = ((presencas / totalDiasLetivosReais) * 100).toFixed(1);
+                const presencas = Math.max(0, divisorDias - faltas);
+                const percFrequencia = ((presencas / divisorDias) * 100).toFixed(1);
                 
                 const perdeuBeneficio = percFrequencia < 75.0;
                 const eTransferido = aluno.status === 'TRANSFERIDO';
@@ -1924,10 +1916,12 @@
                 
                 const ehLetivo = diasLetivosMap[dataIso] === true;
                 const dataObj = new Date(ano, mesIdx, dia);
-                const ehFimDeSemana = dataObj.getDay() === 0 || dataObj.getDay() === 6;
+                
+                // Considera como fim de semana apenas o Domingo (0). Sábado (6) fica liberado.
+                const ehDomingo = dataObj.getDay() === 0;
 
                 htmlDias += `
-                    <button type="button" onclick="toggleDiaLetivo('${dataIso}')" class="h-10 rounded-lg border flex flex-col items-center justify-center transition-all ${ehLetivo ? 'bg-emerald-600 text-white font-bold border-emerald-700 shadow-sm scale-105' : (ehFimDeSemana ? 'bg-slate-100 text-slate-400 border-slate-200' : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50')}">
+                    <button type="button" onclick="toggleDiaLetivo('${dataIso}')" class="h-10 rounded-lg border flex flex-col items-center justify-center transition-all ${ehLetivo ? 'bg-emerald-600 text-white font-bold border-emerald-700 shadow-sm scale-105' : (ehDomingo ? 'bg-slate-100 text-slate-400 border-slate-200' : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50')}">
                         <span class="text-xs">${dia}</span>
                         <span class="text-[9px] uppercase tracking-tighter">${ehLetivo ? 'L' : ''}</span>
                     </button>
