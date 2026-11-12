@@ -113,7 +113,7 @@
                 </button>
                 <button onclick="switchTab('config')" id="tab-config" class="nav-btn flex items-center w-full px-4 py-3 text-sm font-medium rounded-lg text-slate-600 hover:bg-slate-50 hover:text-brand-600 transition-colors">
                     <i class="fa-solid fa-calendar-days w-5 mr-3 text-lg"></i>
-                    Calendário Escolar
+                    Calendário Escolar & Letivo
                 </button>
             </nav>
         </aside>
@@ -125,7 +125,7 @@
             <section id="section-dashboard" class="tab-content space-y-6">
                 <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
                     <h2 class="text-xl font-bold text-slate-800 mb-1">Painel Escolar Resumido</h2>
-                    <p class="text-sm text-slate-500">Acompanhamento em tempo real sincronizado entre todas as máquinas.</p>
+                    <p class="text-sm text-slate-500">Acompanhamento em tempo real sincronizado entre todas as máquinas (Alunos transferidos deduzidos).</p>
 
                     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
                         <div class="bg-slate-50 border border-slate-200 p-4 rounded-xl">
@@ -146,7 +146,7 @@
 
                         <div class="bg-emerald-50 border border-emerald-200 p-4 rounded-xl">
                             <div class="flex items-center justify-between">
-                                <span class="text-xs font-semibold text-emerald-700 uppercase">Beneficiários Bolsa Família</span>
+                                <span class="text-xs font-semibold text-emerald-700 uppercase">Beneficiários Ativos</span>
                                 <i class="fa-solid fa-seedling text-emerald-600"></i>
                             </div>
                             <span id="dash-bolsa-total" class="text-2xl font-bold text-emerald-800 mt-2 block">0</span>
@@ -241,7 +241,7 @@
                         <div>
                             <h2 class="text-xl font-bold text-slate-800">Painel de Busca Ativa Escolar</h2>
                             <p class="text-xs text-amber-600 font-semibold mt-1">
-                                <i class="fa-solid fa-triangle-exclamation"></i> Alunos ativos com 1 ou mais faltas no bimestre entram automaticamente nesta lista.
+                                <i class="fa-solid fa-triangle-exclamation"></i> Alunos ativos com 1 ou mais faltas no Bimestre entram automaticamente nesta lista.
                             </p>
                         </div>
                         <div class="flex flex-wrap items-center gap-3">
@@ -358,7 +358,7 @@
                     <div class="flex justify-between items-center mb-6 no-print">
                         <div>
                             <h2 class="text-xl font-bold text-slate-800">Acompanhamento do Bolsa Família</h2>
-                            <p class="text-xs text-slate-500">Exibindo beneficiários (Frequência mínima: 75%) e justificativas das faltas.</p>
+                            <p class="text-xs text-slate-500">Contagem exata de dias letivos marcados com "L" no Calendário Escolar dentro do Período.</p>
                         </div>
                         <button onclick="window.print()" class="bg-slate-800 hover:bg-slate-900 text-white text-sm px-4 py-2 rounded-lg flex items-center space-x-2">
                             <i class="fa-solid fa-print"></i>
@@ -368,18 +368,19 @@
 
                     <div class="hidden print-only mb-6 text-center border-b pb-4">
                         <h1 class="text-2xl font-bold uppercase">Secretaria de Educação - Relatório Bolsa Família</h1>
-                        <p class="text-sm">Acompanhamento de Frequência Escolar Bimestral (Metragem Mínima 75%)</p>
+                        <p class="text-sm">Acompanhamento de Frequência Escolar por Período (Metragem Mínima 75%)</p>
                         <p class="text-xs text-slate-500 mt-1">Data de Geração: <span id="print-data-hoje"></span></p>
                     </div>
 
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6 no-print">
                         <div>
-                            <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Selecione o Bimestre</label>
+                            <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Selecione o Período</label>
                             <select id="bolsa-bimestre-select" onchange="renderizarRelatorioBolsa()" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm">
-                                <option value="1">1º Bimestre</option>
-                                <option value="2">2º Bimestre</option>
-                                <option value="3">3º Bimestre</option>
-                                <option value="4">4º Bimestre</option>
+                                <option value="1">1º Período (01/02 a 31/03)</option>
+                                <option value="2">2º Período (01/04 a 31/05)</option>
+                                <option value="3">3º Período (01/06 a 31/07)</option>
+                                <option value="4">4º Período (01/08 a 30/09)</option>
+                                <option value="5">5º Período (01/10 a 30/11)</option>
                             </select>
                         </div>
                         <div>
@@ -482,91 +483,59 @@
 
             <!-- TAB: CALENDÁRIO / CONFIGURAÇÕES -->
             <section id="section-config" class="tab-content hidden space-y-6">
-                <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-                    <h2 class="text-xl font-bold text-slate-800 mb-2">Consulta do Calendário e Bimestres</h2>
-                    <p class="text-xs text-slate-500 mb-6">Datas e períodos letivos cadastrados pela Secretaria.</p>
+                <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-6">
+                    <div>
+                        <h2 class="text-xl font-bold text-slate-800 mb-1">Calendário Escolar e Marcação de Dias Letivos (L)</h2>
+                        <p class="text-xs text-slate-500">Navegue pelos meses do ano, clique nos dias letivos para marcá-los com <strong>[ L ]</strong> (considerando feriados e emendas) e defina os períodos dos bimestres para a Busca Ativa.</p>
+                    </div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <!-- 1º Bimestre -->
-                        <div class="border rounded-xl p-4 bg-slate-50 space-y-3">
-                            <h3 class="font-bold text-slate-700 border-b pb-1">1º Bimestre</h3>
-                            <div class="grid grid-cols-2 gap-2">
-                                <div>
-                                    <label class="block text-[11px] font-semibold text-slate-500">Início</label>
-                                    <input type="date" id="config-b1-inicio" disabled class="w-full p-2 border rounded-lg text-xs bg-slate-100">
-                                </div>
-                                <div>
-                                    <label class="block text-[11px] font-semibold text-slate-500">Término</label>
-                                    <input type="date" id="config-b1-fim" disabled class="w-full p-2 border rounded-lg text-xs bg-slate-100">
-                                </div>
+                    <!-- Configuração dos Bimestres para Busca Ativa -->
+                    <div class="bg-slate-50 p-4 rounded-xl border">
+                        <h3 class="font-bold text-slate-700 text-sm mb-3">Períodos dos Bimestres (Para a Busca Ativa)</h3>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                            <div class="bg-white p-3 rounded-lg border space-y-2">
+                                <span class="font-bold text-xs text-brand-700 block">1º Bimestre</span>
+                                <input type="date" id="config-b1-inicio" class="w-full p-1.5 border rounded text-xs">
+                                <input type="date" id="config-b1-fim" class="w-full p-1.5 border rounded text-xs">
                             </div>
-                            <div>
-                                <label class="block text-[11px] font-semibold text-slate-500">Dias Letivos Totais</label>
-                                <input type="number" id="config-b1-dias" disabled value="50" class="w-full p-2 border rounded-lg font-bold text-brand-700 text-sm bg-slate-100">
+                            <div class="bg-white p-3 rounded-lg border space-y-2">
+                                <span class="font-bold text-xs text-brand-700 block">2º Bimestre</span>
+                                <input type="date" id="config-b2-inicio" class="w-full p-1.5 border rounded text-xs">
+                                <input type="date" id="config-b2-fim" class="w-full p-1.5 border rounded text-xs">
                             </div>
-                        </div>
-
-                        <!-- 2º Bimestre -->
-                        <div class="border rounded-xl p-4 bg-slate-50 space-y-3">
-                            <h3 class="font-bold text-slate-700 border-b pb-1">2º Bimestre</h3>
-                            <div class="grid grid-cols-2 gap-2">
-                                <div>
-                                    <label class="block text-[11px] font-semibold text-slate-500">Início</label>
-                                    <input type="date" id="config-b2-inicio" disabled class="w-full p-2 border rounded-lg text-xs bg-slate-100">
-                                </div>
-                                <div>
-                                    <label class="block text-[11px] font-semibold text-slate-500">Término</label>
-                                    <input type="date" id="config-b2-fim" disabled class="w-full p-2 border rounded-lg text-xs bg-slate-100">
-                                </div>
+                            <div class="bg-white p-3 rounded-lg border space-y-2">
+                                <span class="font-bold text-xs text-brand-700 block">3º Bimestre</span>
+                                <input type="date" id="config-b3-inicio" class="w-full p-1.5 border rounded text-xs">
+                                <input type="date" id="config-b3-fim" class="w-full p-1.5 border rounded text-xs">
                             </div>
-                            <div>
-                                <label class="block text-[11px] font-semibold text-slate-500">Dias Letivos Totais</label>
-                                <input type="number" id="config-b2-dias" disabled value="50" class="w-full p-2 border rounded-lg font-bold text-brand-700 text-sm bg-slate-100">
-                            </div>
-                        </div>
-
-                        <!-- 3º Bimestre -->
-                        <div class="border rounded-xl p-4 bg-slate-50 space-y-3">
-                            <h3 class="font-bold text-slate-700 border-b pb-1">3º Bimestre</h3>
-                            <div class="grid grid-cols-2 gap-2">
-                                <div>
-                                    <label class="block text-[11px] font-semibold text-slate-500">Início</label>
-                                    <input type="date" id="config-b3-inicio" disabled class="w-full p-2 border rounded-lg text-xs bg-slate-100">
-                                </div>
-                                <div>
-                                    <label class="block text-[11px] font-semibold text-slate-500">Término</label>
-                                    <input type="date" id="config-b3-fim" disabled class="w-full p-2 border rounded-lg text-xs bg-slate-100">
-                                </div>
-                            </div>
-                            <div>
-                                <label class="block text-[11px] font-semibold text-slate-500">Dias Letivos Totais</label>
-                                <input type="number" id="config-b3-dias" disabled value="50" class="w-full p-2 border rounded-lg font-bold text-brand-700 text-sm bg-slate-100">
-                            </div>
-                        </div>
-
-                        <!-- 4º Bimestre -->
-                        <div class="border rounded-xl p-4 bg-slate-50 space-y-3">
-                            <h3 class="font-bold text-slate-700 border-b pb-1">4º Bimestre</h3>
-                            <div class="grid grid-cols-2 gap-2">
-                                <div>
-                                    <label class="block text-[11px] font-semibold text-slate-500">Início</label>
-                                    <input type="date" id="config-b4-inicio" disabled class="w-full p-2 border rounded-lg text-xs bg-slate-100">
-                                </div>
-                                <div>
-                                    <label class="block text-[11px] font-semibold text-slate-500">Término</label>
-                                    <input type="date" id="config-b4-fim" disabled class="w-full p-2 border rounded-lg text-xs bg-slate-100">
-                                </div>
-                            </div>
-                            <div>
-                                <label class="block text-[11px] font-semibold text-slate-500">Dias Letivos Totais</label>
-                                <input type="number" id="config-b4-dias" disabled value="50" class="w-full p-2 border rounded-lg font-bold text-brand-700 text-sm bg-slate-100">
+                            <div class="bg-white p-3 rounded-lg border space-y-2">
+                                <span class="font-bold text-xs text-brand-700 block">4º Bimestre</span>
+                                <input type="date" id="config-b4-inicio" class="w-full p-1.5 border rounded text-xs">
+                                <input type="date" id="config-b4-fim" class="w-full p-1.5 border rounded text-xs">
                             </div>
                         </div>
                     </div>
 
-                    <div id="btn-salvar-config-container" class="mt-6 flex justify-end">
+                    <!-- CALENDÁRIO VISUAL ANUAL COM MARCAÇÃO DE "L" -->
+                    <div class="border rounded-xl p-4 bg-white">
+                        <div class="flex flex-col sm:flex-row justify-between items-center mb-4 gap-2">
+                            <h3 class="font-bold text-slate-800 text-sm"><i class="fa-solid fa-calendar text-brand-600 mr-2"></i> Marcação Visual de Dias Letivos (Clique no dia para ativar/desativar o L)</h3>
+                            <div class="flex items-center gap-3 text-xs">
+                                <span class="flex items-center gap-1"><span class="w-3 h-3 bg-emerald-600 rounded"></span> Dia Letivo [L]</span>
+                                <span class="flex items-center gap-1"><span class="w-3 h-3 bg-slate-100 border rounded"></span> Não Letivo / Fim de Semana</span>
+                            </div>
+                        </div>
+
+                        <!-- Seletor de Meses -->
+                        <div class="flex overflow-x-auto gap-2 pb-3 mb-4 border-b" id="botoes-meses-container"></div>
+
+                        <!-- Grade do Mês Selecionado -->
+                        <div id="painel-mes-ativo" class="max-w-md mx-auto"></div>
+                    </div>
+
+                    <div id="btn-salvar-config-container" class="flex justify-end">
                         <button onclick="salvarConfigCalendario()" class="bg-brand-600 hover:bg-brand-700 text-white font-medium px-6 py-2.5 rounded-lg shadow-sm">
-                            Salvar Configurações no Servidor
+                            Salvar Calendário e Dias Letivos no Servidor
                         </button>
                     </div>
                 </div>
@@ -796,15 +765,12 @@
             for (let b = 1; b <= 4; b++) {
                 const i = document.getElementById(`config-b${b}-inicio`);
                 const f = document.getElementById(`config-b${b}-fim`);
-                const d = document.getElementById(`config-b${b}-dias`);
                 if (perfilAtual === 'professor') {
                     if (i) i.disabled = true;
                     if (f) f.disabled = true;
-                    if (d) d.disabled = true;
                 } else {
                     if (i) i.disabled = false;
                     if (f) f.disabled = false;
-                    if (d) d.disabled = false;
                 }
             }
 
@@ -829,11 +795,12 @@
         let appState = {
             config: { 
                 bimestres: { 
-                    1: { inicio: '', fim: '', dias: 50 },
-                    2: { inicio: '', fim: '', dias: 50 },
-                    3: { inicio: '', fim: '', dias: 50 },
-                    4: { inicio: '', fim: '', dias: 50 }
-                } 
+                    1: { inicio: '', fim: '' },
+                    2: { inicio: '', fim: '' },
+                    3: { inicio: '', fim: '' },
+                    4: { inicio: '', fim: '' }
+                },
+                diasLetivos: {} // Ex: {"2026-02-02": true, "2026-02-03": true}
             },
             turmas: [],
             alunos: [],
@@ -881,7 +848,9 @@
 
             db.collection("configuracoes").doc("calendario").onSnapshot(doc => {
                 if (doc.exists) {
-                    appState.config = doc.data();
+                    const data = doc.data();
+                    if (data.bimestres) appState.config.bimestres = data.bimestres;
+                    if (data.diasLetivos) appState.config.diasLetivos = data.diasLetivos;
                 }
                 carregarConfiguracoesCalendario();
                 aoMudarDataChamada();
@@ -918,7 +887,10 @@
             if (abaAtual === 'relatorios-busca') renderizarRelatoriosBusca();
             if (abaAtual === 'bolsa-familia') renderizarRelatorioBolsa();
             if (abaAtual === 'alunos') renderizarTabelaAlunos();
-            if (abaAtual === 'config') carregarConfiguracoesCalendario();
+            if (abaAtual === 'config') {
+                carregarConfiguracoesCalendario();
+                renderizarSeletorMesesCalendario();
+            }
         }
 
         function identificarBimestrePorData(dataStr) {
@@ -944,19 +916,46 @@
             carregarAlunosParaChamada();
         }
 
-        function getDiasLetivosBimestre(bimestre) {
-            if (appState.config && appState.config.bimestres && appState.config.bimestres[bimestre]) {
-                const val = appState.config.bimestres[bimestre].dias;
-                return val ? parseInt(val) : 50;
-            }
-            return 50;
-        }
-
         function getFaltasAlunoBimestre(alunoId, bimestre) {
             if (!appState.faltasDetalhadas || !appState.faltasDetalhadas[alunoId] || !appState.faltasDetalhadas[alunoId][bimestre]) {
                 return [];
             }
             return appState.faltasDetalhadas[alunoId][bimestre];
+        }
+
+        // CONTAGEM REAL: Varre o dicionário de dias letivos marcados com "L" no intervalo exato do Período
+        function contarDiasLetivosMarcadosNoPeriodo(dataInicioPeriodo, dataFimPeriodo) {
+            if (!appState.config || !appState.config.diasLetivos) return 40;
+
+            let totalL = 0;
+            const diasMarcados = appState.config.diasLetivos;
+
+            Object.keys(diasMarcados).forEach(dataStr => {
+                if (diasMarcados[dataStr] === true) {
+                    if (dataStr >= dataInicioPeriodo && dataStr <= dataFimPeriodo) {
+                        totalL++;
+                    }
+                }
+            });
+
+            return totalL > 0 ? totalL : 40; // Fallback se nenhum dia foi marcado ainda
+        }
+
+        function getFaltasAlunoPorIntervalo(alunoId, dataInicio, dataFim) {
+            let todasFaltas = [];
+            if (!appState.faltasDetalhadas || !appState.faltasDetalhadas[alunoId]) return todasFaltas;
+
+            const bimestresObj = appState.faltasDetalhadas[alunoId];
+            Object.values(bimestresObj).forEach(listaFaltas => {
+                if (Array.isArray(listaFaltas)) {
+                    listaFaltas.forEach(f => {
+                        if (f.data >= dataInicio && f.data <= dataFim) {
+                            todasFaltas.push(f);
+                        }
+                    });
+                }
+            });
+            return todasFaltas;
         }
 
         function showToast(mensagem) {
@@ -1082,13 +1081,12 @@
             }
         }
 
-        // ==================== DASHBOARD ====================
+        // ==================== DASHBOARD (DEDUZINDO TRANSFERIDOS) ====================
         function renderizarDashboard() {
             const alunosAtivos = appState.alunos.filter(a => a.status !== 'TRANSFERIDO');
-            const totalAlunos = alunosAtivos.length;
-            const bolsaAlunos = appState.alunos.filter(a => a.bolsaFamilia === 'SIM');
+            const totalAlunosAtivos = alunosAtivos.length;
+            const bolsaAlunosAtivos = alunosAtivos.filter(a => a.bolsaFamilia === 'SIM');
             
-            // Verifica o bimestre atual com base na data de hoje
             const hojeStr = new Date().toISOString().split('T')[0];
             const bimestreAtual = parseInt(identificarBimestrePorData(hojeStr));
 
@@ -1100,17 +1098,21 @@
                 if (faltasArray.length >= 1) contBuscaAtiva++;
             });
 
-            bolsaAlunos.forEach(aluno => {
-                const faltasArray = getFaltasAlunoBimestre(aluno.id, bimestreAtual);
-                const totalDias = getDiasLetivosBimestre(bimestreAtual);
-                const presencas = Math.max(0, totalDias - faltasArray.length);
-                const freq = (presencas / totalDias) * 100;
+            const anoAtual = new Date().getFullYear();
+            const bolsaBim1Inicio = `${anoAtual}-02-01`;
+            const bolsaBim1Fim = `${anoAtual}-03-31`;
+            const diasBolsaBim1 = contarDiasLetivosMarcadosNoPeriodo(bolsaBim1Inicio, bolsaBim1Fim);
+
+            bolsaAlunosAtivos.forEach(aluno => {
+                const faltasArray = getFaltasAlunoPorIntervalo(aluno.id, bolsaBim1Inicio, bolsaBim1Fim);
+                const presencas = Math.max(0, diasBolsaBim1 - faltasArray.length);
+                const freq = (presencas / diasBolsaBim1) * 100;
                 if (freq < 75) contBolsaRisco++;
             });
 
-            document.getElementById('dash-total-alunos').innerText = totalAlunos;
+            document.getElementById('dash-total-alunos').innerText = totalAlunosAtivos;
             document.getElementById('dash-busca-ativa').innerText = contBuscaAtiva;
-            document.getElementById('dash-bolsa-total').innerText = bolsaAlunos.length;
+            document.getElementById('dash-bolsa-total').innerText = bolsaAlunosAtivos.length;
             document.getElementById('dash-bolsa-risco').innerText = contBolsaRisco;
 
             const listaBuscaEl = document.getElementById('dash-lista-busca');
@@ -1136,10 +1138,17 @@
             const bimEl = document.getElementById('dash-bimestres-resumo');
             bimEl.innerHTML = [1,2,3,4].map(b => {
                 const info = (appState.config && appState.config.bimestres && appState.config.bimestres[b]) || {};
+                // Conta quantos L's tem naquele bimestre
+                let totalLBim = 0;
+                if (info.inicio && info.fim && appState.config.diasLetivos) {
+                    Object.keys(appState.config.diasLetivos).forEach(d => {
+                        if (appState.config.diasLetivos[d] === true && d >= info.inicio && d <= info.fim) totalLBim++;
+                    });
+                }
                 return `
                     <div class="p-3 bg-slate-50 rounded-lg border text-xs text-center">
                         <span class="block text-slate-500 font-medium">${b}º Bimestre</span>
-                        <span class="block text-sm font-bold text-brand-700">${info.dias || 50} Dias Letivos</span>
+                        <span class="block text-sm font-bold text-brand-700">${totalLBim} Dias Letivos [L]</span>
                         <span class="block text-[10px] text-slate-400 mt-0.5">${info.inicio ? info.inicio.split('-').reverse().join('/') : 'Início N/D'} a ${info.fim ? info.fim.split('-').reverse().join('/') : 'Fim N/D'}</span>
                     </div>
                 `;
@@ -1281,7 +1290,6 @@
             const dataFiltroInput = document.getElementById('filtro-busca-data');
             const dataBuscaSelecionada = dataFiltroInput ? dataFiltroInput.value : new Date().toISOString().split('T')[0];
 
-            // Identifica corretamente o bimestre com base na data selecionada no filtro
             const bimestreDinamico = parseInt(identificarBimestrePorData(dataBuscaSelecionada));
 
             const tabelaCorpo = document.getElementById('tabela-busca-ativa');
@@ -1544,16 +1552,30 @@
             showToast('Registro de Busca Ativa gravado!');
         }
 
-        // ==================== RELATÓRIO BOLSA FAMÍLIA ====================
+        // ==================== RELATÓRIO BOLSA FAMÍLIA (CONTAGEM DE "L" NO PERÍODO) ====================
         function renderizarRelatorioBolsa() {
-            const bimestre = parseInt(document.getElementById('bolsa-bimestre-select').value);
+            const periodoBolsa = parseInt(document.getElementById('bolsa-bimestre-select').value);
             const turmaFiltro = document.getElementById('bolsa-turma-select').value;
             const statusFiltro = document.getElementById('bolsa-status-filtro').value;
-            const totalDiasLetivos = getDiasLetivosBimestre(bimestre);
+            
+            const anoAtual = new Date().getFullYear();
+            
+            const periodosBolsa = {
+                1: { nome: "1º Período (01/02 a 31/03)", inicio: `${anoAtual}-02-01`, fim: `${anoAtual}-03-31` },
+                2: { nome: "2º Período (01/04 a 31/05)", inicio: `${anoAtual}-04-01`, fim: `${anoAtual}-05-31` },
+                3: { nome: "3º Período (01/06 a 31/07)", inicio: `${anoAtual}-06-01`, fim: `${anoAtual}-07-31` },
+                4: { nome: "4º Período (01/08 a 30/09)", inicio: `${anoAtual}-08-01`, fim: `${anoAtual}-09-30` },
+                5: { nome: "5º Período (01/10 a 30/11)", inicio: `${anoAtual}-10-01`, fim: `${anoAtual}-11-30` }
+            };
+
+            const periodoSelecionado = periodosBolsa[periodoBolsa] || periodosBolsa[1];
+            
+            // CONTAGEM REAL DOS DIAS LETIVOS MARCADOS COM "L" NO CALENDÁRIO VISUAL
+            const totalDiasLetivosReais = contarDiasLetivosMarcadosNoPeriodo(periodoSelecionado.inicio, periodoSelecionado.fim);
 
             document.getElementById('bolsa-metrica-header').innerHTML = `
-                <span><strong>Período:</strong> ${bimestre}º Bimestre Letivo</span>
-                <span><strong>Total de Dias Letivos:</strong> ${totalDiasLetivos} Dias</span>
+                <span><strong>Período Oficial:</strong> ${periodoSelecionado.nome}</span>
+                <span><strong>Dias Letivos Marcados [L]:</strong> ${totalDiasLetivosReais} Dias</span>
                 <span><strong>Corte Obrigatório:</strong> Mínimo 75% Frequência</span>
             `;
 
@@ -1564,9 +1586,11 @@
                 if (!eBeneficiario || !atendeTurma) return false;
 
                 if (statusFiltro === 'RISCO') {
-                    const faltasArray = getFaltasAlunoBimestre(aluno.id, bimestre);
-                    const presencas = Math.max(0, totalDiasLetivos - faltasArray.length);
-                    const freq = (presencas / totalDiasLetivos) * 100;
+                    if (aluno.status === 'TRANSFERIDO') return false;
+
+                    const faltasArray = getFaltasAlunoPorIntervalo(aluno.id, periodoSelecionado.inicio, periodoSelecionado.fim);
+                    const presencas = Math.max(0, totalDiasLetivosReais - faltasArray.length);
+                    const freq = (presencas / totalDiasLetivosReais) * 100;
                     return freq < 75.0;
                 }
 
@@ -1581,10 +1605,10 @@
             }
 
             tabelaCorpo.innerHTML = beneficiarios.map(aluno => {
-                const faltasArray = getFaltasAlunoBimestre(aluno.id, bimestre);
+                const faltasArray = getFaltasAlunoPorIntervalo(aluno.id, periodoSelecionado.inicio, periodoSelecionado.fim);
                 const faltas = faltasArray.length;
-                const presencas = Math.max(0, totalDiasLetivos - faltas);
-                const percFrequencia = ((presencas / totalDiasLetivos) * 100).toFixed(1);
+                const presencas = Math.max(0, totalDiasLetivosReais - faltas);
+                const percFrequencia = ((presencas / totalDiasLetivosReais) * 100).toFixed(1);
                 
                 const perdeuBeneficio = percFrequencia < 75.0;
                 const eTransferido = aluno.status === 'TRANSFERIDO';
@@ -1612,7 +1636,7 @@
                 }
 
                 return `
-                    <tr class="hover:bg-slate-50 ${eTransferido ? 'bg-slate-100/80' : (perdeuBeneficio ? 'bg-rose-50/50' : '')}">
+                    <tr class="hover:bg-slate-50 ${eTransferido ? 'bg-slate-100/85' : (perdeuBeneficio ? 'bg-rose-50/50' : '')}">
                         <td class="p-3 text-center font-bold text-brand-800">${aluno.numero || '-'}</td>
                         <td class="p-3 font-mono text-xs text-slate-500">${aluno.ra}</td>
                         <td class="p-3 font-semibold text-slate-800">
@@ -1623,26 +1647,31 @@
                         <td class="p-3 text-center font-semibold text-emerald-700">${presencas}</td>
                         <td class="p-3 text-center font-semibold text-rose-600">${faltas}</td>
                         <td class="p-3 text-center">
-                            <span class="text-sm font-extrabold ${perdeuBeneficio ? 'text-rose-600' : 'text-emerald-700'}">
+                            <span class="text-sm font-extrabold ${perdeuBeneficio && !eTransferido ? 'text-rose-600' : 'text-emerald-700'}">
                                 ${percFrequencia}%
                             </span>
                         </td>
                         <td class="p-3 text-left">
                             <div class="mb-1.5 flex flex-wrap gap-1 items-center">
-                                ${perdeuBeneficio ? 
-                                    `<span class="bg-rose-600 text-white font-bold text-xs px-2.5 py-1 rounded-full shadow-sm inline-block">
-                                        <i class="fa-solid fa-triangle-exclamation mr-1"></i> PERDEU BENEFÍCIO (<75%)
-                                    </span>` : 
-                                    `<span class="bg-emerald-100 text-emerald-800 font-semibold text-xs px-2.5 py-1 rounded-full inline-block">
-                                        <i class="fa-solid fa-circle-check mr-1"></i> ATENDEU A METRAGEM (≥75%)
-                                    </span>`
+                                ${eTransferido ? 
+                                    `<span class="bg-slate-700 text-white font-bold text-xs px-2.5 py-1 rounded-full shadow-sm inline-block">
+                                        <i class="fa-solid fa-file-export mr-1"></i> ALUNO TRANSFERIDO (PRESTAÇÃO DE CONTAS MEC)
+                                    </span>` :
+                                    (perdeuBeneficio ? 
+                                        `<span class="bg-rose-600 text-white font-bold text-xs px-2.5 py-1 rounded-full shadow-sm inline-block">
+                                            <i class="fa-solid fa-triangle-exclamation mr-1"></i> PERDEU BENEFÍCIO (<75%)
+                                        </span>` : 
+                                        `<span class="bg-emerald-100 text-emerald-800 font-semibold text-xs px-2.5 py-1 rounded-full inline-block">
+                                            <i class="fa-solid fa-circle-check mr-1"></i> ATENDEU A METRAGEM (≥75%)
+                                        </span>`
+                                    )
                                 }
                             </div>
 
                             ${eTransferido ? `
                                 <div class="mt-1 p-2 bg-rose-50 border border-rose-200 rounded-lg text-xs text-rose-900">
-                                    <p class="font-bold"><i class="fa-solid fa-graduation-cap text-rose-600 mr-1"></i> ALUNO TRANSFERIDO</p>
-                                    <p class="text-[11px] mt-0.5"><strong>Data:</strong> ${dataTransfBR || 'Não informada'} | <strong>Destino:</strong> ${aluno.escolaDestino || 'Não informada'}</p>
+                                    <p class="font-bold"><i class="fa-solid fa-graduation-cap text-rose-600 mr-1"></i> DADOS DA TRANSFERÊNCIA</p>
+                                    <p class="text-[11px] mt-0.5"><strong>Data:</strong> ${dataTransfBR || 'Não informada'} | <strong>Escola Destino:</strong> ${aluno.escolaDestino || 'Não informada'}</p>
                                 </div>
                             ` : ''}
 
@@ -1651,7 +1680,7 @@
                                     <p class="text-[10px] font-bold text-slate-500 uppercase mb-1">Justificativas Registradas:</p>
                                     <div class="flex flex-wrap">${htmlJustificativas}</div>
                                 </div>
-                            ` : '<span class="text-[11px] text-slate-400 italic block mt-1">Sem faltas registradas no bimestre</span>'}
+                            ` : '<span class="text-[11px] text-slate-400 italic block mt-1">Sem faltas registradas no período</span>'}
                         </td>
                     </tr>
                 `;
@@ -1824,20 +1853,112 @@
             }
         }
 
-        // ==================== CALENDÁRIO / CONFIGURAÇÃO ====================
+        // ==================== CALENDÁRIO VISUAL DE DIAS LETIVOS (L) ====================
+        let mesSelecionadoCalendario = 2; // Inicia em Fevereiro (2) do ano atual
+
+        const nomesMeses = [
+            "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", 
+            "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
+        ];
+
         function carregarConfiguracoesCalendario() {
             if (appState.config && appState.config.bimestres) {
                 for (let b = 1; b <= 4; b++) {
                     const info = appState.config.bimestres[b] || {};
                     const elInicio = document.getElementById(`config-b${b}-inicio`);
                     const elFim = document.getElementById(`config-b${b}-fim`);
-                    const elDias = document.getElementById(`config-b${b}-dias`);
-
                     if (elInicio) elInicio.value = info.inicio || '';
                     if (elFim) elFim.value = info.fim || '';
-                    if (elDias) elDias.value = info.dias || 50;
                 }
             }
+        }
+
+        function renderizarSeletorMesesCalendario() {
+            const container = document.getElementById('botoes-meses-container');
+            if (!container) return;
+
+            container.innerHTML = nomesMeses.map((nome, index) => {
+                const mesNum = index + 1;
+                const ativo = (mesNum === mesSelecionadoCalendario);
+                return `
+                    <button type="button" onclick="mudarMesCalendario(${mesNum})" class="px-3 py-1.5 rounded-lg text-xs font-bold transition-colors whitespace-nowrap ${ativo ? 'bg-brand-600 text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}">
+                        ${nome}
+                    </button>
+                `;
+            }).join('');
+
+            renderizarGradeMesAtivo();
+        }
+
+        function mudarMesCalendario(mes) {
+            mesSelecionadoCalendario = mes;
+            renderizarSeletorMesesCalendario();
+        }
+
+        function renderizarGradeMesAtivo() {
+            const painel = document.getElementById('painel-mes-ativo');
+            if (!painel) return;
+
+            const ano = new Date().getFullYear();
+            const mesIdx = mesSelecionadoCalendario - 1;
+            const nomeMes = nomesMeses[mesIdx];
+
+            // Descobre o primeiro dia do mês e o total de dias do mês
+            const primeiroDiaObj = new Date(ano, mesIdx, 1);
+            const ultimoDiaObj = new Date(ano, mesIdx + 1, 0);
+            const totalDias = ultimoDiaObj.getDate();
+            const inicioDiaSemana = primeiroDiaObj.getDay(); // 0 (Domingo) a 6 (Sábado)
+
+            let htmlDias = '';
+            // Dias vazios antes do dia 1
+            for (let i = 0; i < inicioDiaSemana; i++) {
+                htmlDias += `<div></div>`;
+            }
+
+            const diasLetivosMap = (appState.config && appState.config.diasLetivos) || {};
+
+            for (let dia = 1; dia <= totalDias; dia++) {
+                const mesStr = String(mesSelecionadoCalendario).padStart(2, '0');
+                const diaStr = String(dia).padStart(2, '0');
+                const dataIso = `${ano}-${mesStr}-${diaStr}`;
+                
+                const ehLetivo = diasLetivosMap[dataIso] === true;
+                const dataObj = new Date(ano, mesIdx, dia);
+                const ehFimDeSemana = dataObj.getDay() === 0 || dataObj.getDay() === 6;
+
+                htmlDias += `
+                    <button type="button" onclick="toggleDiaLetivo('${dataIso}')" class="h-10 rounded-lg border flex flex-col items-center justify-center transition-all ${ehLetivo ? 'bg-emerald-600 text-white font-bold border-emerald-700 shadow-sm scale-105' : (ehFimDeSemana ? 'bg-slate-100 text-slate-400 border-slate-200' : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50')}">
+                        <span class="text-xs">${dia}</span>
+                        <span class="text-[9px] uppercase tracking-tighter">${ehLetivo ? 'L' : ''}</span>
+                    </button>
+                `;
+            }
+
+            painel.innerHTML = `
+                <div class="bg-slate-50 p-4 rounded-xl border">
+                    <h4 class="font-bold text-center text-slate-800 text-sm mb-3">${nomeMes} de ${ano}</h4>
+                    <div class="grid grid-cols-7 gap-1 text-center text-[10px] font-bold text-slate-500 uppercase mb-2">
+                        <span>Dom</span><span>Seg</span><span>Ter</span><span>Qua</span><span>Qui</span><span>Sex</span><span>Sáb</span>
+                    </div>
+                    <div class="grid grid-cols-7 gap-1">
+                        ${htmlDias}
+                    </div>
+                </div>
+            `;
+        }
+
+        function toggleDiaLetivo(dataIso) {
+            if (perfilAtual === 'professor') {
+                alert('Acesso restrito: Apenas a Secretaria pode alterar o calendário letivo.');
+                return;
+            }
+
+            if (!appState.config.diasLetivos) appState.config.diasLetivos = {};
+            
+            const atual = appState.config.diasLetivos[dataIso] === true;
+            appState.config.diasLetivos[dataIso] = !atual;
+
+            renderizarGradeMesAtivo();
         }
 
         async function salvarConfigCalendario() {
@@ -1845,17 +1966,23 @@
                 alert('Acesso restrito: Apenas a Secretaria pode alterar o calendário escolar.');
                 return;
             }
+
             const bimestres = {};
             for (let b = 1; b <= 4; b++) {
                 bimestres[b] = {
                     inicio: document.getElementById(`config-b${b}-inicio`).value,
-                    fim: document.getElementById(`config-b${b}-fim`).value,
-                    dias: parseInt(document.getElementById(`config-b${b}-dias`).value) || 50
+                    fim: document.getElementById(`config-b${b}-fim`).value
                 };
             }
 
-            await db.collection("configuracoes").doc("calendario").set({ bimestres });
-            showToast('Calendário e bimestres atualizados na nuvem!');
+            appState.config.bimestres = bimestres;
+
+            await db.collection("configuracoes").doc("calendario").set({
+                bimestres: appState.config.bimestres,
+                diasLetivos: appState.config.diasLetivos
+            }, { merge: true });
+
+            showToast('Calendário, bimestres e dias letivos [L] salvos com sucesso!');
         }
 
         function definirDataHoje() {
