@@ -804,7 +804,7 @@
                     <input type="text" id="form-aluno-ra" class="w-full border rounded-lg p-2 bg-slate-50">
                 </div>
 
-                <!-- CAMPO DATA DE MATRÍCULA -->
+                <!-- CAMPO DATA DE MATRÍCULA (PADRÃO 02/02/2026) -->
                 <div>
                     <label class="block text-xs font-bold text-brand-700 mb-1">Data de Matrícula na Escola</label>
                     <input type="date" id="form-aluno-data-matricula" class="w-full border border-brand-300 rounded-lg p-2 bg-brand-50/50 text-xs font-semibold">
@@ -1001,7 +1001,12 @@
             db.collection("alunos").onSnapshot(snapshot => {
                 appState.alunos = [];
                 snapshot.forEach(doc => {
-                    appState.alunos.push({ id: doc.id, ...doc.data() });
+                    const dados = doc.data();
+                    // Se o aluno não tiver data de matrícula cadastrada, define 02 de fevereiro por padrão
+                    if (!dados.dataMatricula) {
+                        dados.dataMatricula = '2026-02-02';
+                    }
+                    appState.alunos.push({ id: doc.id, ...dados });
                 });
                 appState.alunos.sort((a, b) => (parseInt(a.numero) || 999) - (parseInt(b.numero) || 999));
                 carregarTurmasNosSelects();
@@ -1134,7 +1139,6 @@
 
             Object.keys(diasMarcados).forEach(dataStr => {
                 if (diasMarcados[dataStr] === true) {
-                    // Respeita a data de matrícula do aluno (só conta dias letivos a partir da matrícula)
                     if (dataMatriculaAluno && dataStr < dataMatriculaAluno) return;
 
                     if (dataStr >= dataInicioPeriodo && dataStr <= dataFimPeriodo) {
@@ -1151,13 +1155,12 @@
             if (!appState.faltasDetalhadas || !appState.faltasDetalhadas[alunoId]) return todasFaltas;
 
             const aluno = appState.alunos.find(a => a.id === alunoId);
-            const dataMatricula = aluno && aluno.dataMatricula ? aluno.dataMatricula : '2026-01-01';
+            const dataMatricula = aluno && aluno.dataMatricula ? aluno.dataMatricula : '2026-02-02';
 
             const bimestresObj = appState.faltasDetalhadas[alunoId];
             Object.values(bimestresObj).forEach(listaFaltas => {
                 if (Array.isArray(listaFaltas)) {
                     listaFaltas.forEach(f => {
-                        // Só contabiliza faltas ocorridas a partir da data de matrícula
                         if (f.data >= dataMatricula && f.data >= dataInicio && f.data <= dataFim) {
                             todasFaltas.push(f);
                         }
@@ -1526,8 +1529,8 @@
             let contBolsaRisco = 0;
 
             alunosAtivos.forEach(aluno => {
-                const dataMatricula = aluno.dataMatricula || '2026-01-01';
-                if (dataHojeStr < dataMatricula) return; // Se antes da matrícula, não entra na busca ativa
+                const dataMatricula = aluno.dataMatricula || '2026-02-02';
+                if (dataHojeStr < dataMatricula) return;
 
                 const faltasArray = getFaltasAlunoBimestre(aluno.id, bimestreAtual);
                 const faltouNoDia = faltasArray.some(f => f.data === dataHojeStr);
@@ -1541,19 +1544,25 @@
                 }
             });
 
-            const anoAtual = new Date().getFullYear();
-            const inicioMes = `${anoAtual}-02-01`;
-            const fimMes = `${anoAtual}-02-28`;
+            const dataAtualObj = new Date();
+            const anoAtual = dataAtualObj.getFullYear();
+            const mesAtual = dataAtualObj.getMonth() + 1;
+            
+            const primeiroDiaMesAtual = `${anoAtual}-${String(mesAtual).padStart(2, '0')}-01`;
+            const ultimoDiaMesAtual = new Date(anoAtual, mesAtual, 0).toISOString().split('T')[0];
 
             bolsaAlunosAtivos.forEach(aluno => {
-                const dataMatricula = aluno.dataMatricula || '2026-01-01';
-                const diasMesDash = contarDiasLetivosMarcadosNoPeriodo(inicioMes, fimMes, dataMatricula);
-                const divisorDash = diasMesDash > 0 ? diasMesDash : 20;
+                const dataMatricula = aluno.dataMatricula || '2026-02-02';
+                const diasMesDash = contarDiasLetivosMarcadosNoPeriodo(primeiroDiaMesAtual, ultimoDiaMesAtual, dataMatricula);
+                if (diasMesDash <= 0) return;
 
-                const faltasArray = getFaltasAlunoPorIntervalo(aluno.id, inicioMes, fimMes);
-                const presencas = Math.max(0, divisorDash - faltasArray.length);
-                const freq = divisorDash > 0 ? (presencas / divisorDash) * 100 : 100;
-                if (freq < 75) contBolsaRisco++;
+                const faltasArray = getFaltasAlunoPorIntervalo(aluno.id, primeiroDiaMesAtual, ultimoDiaMesAtual);
+                const presencas = Math.max(0, diasMesDash - faltasArray.length);
+                const freq = (presencas / diasMesDash) * 100;
+                
+                if (freq < 75.0) {
+                    contBolsaRisco++;
+                }
             });
 
             document.getElementById('dash-total-alunos').innerText = totalAlunosAtivos;
@@ -1563,7 +1572,7 @@
 
             const listaBuscaEl = document.getElementById('dash-lista-busca');
             const alunosRisco = alunosAtivos.filter(a => {
-                const dataMatricula = a.dataMatricula || '2026-01-01';
+                const dataMatricula = a.dataMatricula || '2026-02-02';
                 if (dataHojeStr < dataMatricula) return false;
 
                 const faltasArray = getFaltasAlunoBimestre(a.id, bimestreAtual);
@@ -1607,7 +1616,7 @@
             }).join('');
         }
 
-        // ==================== CHAMADA DIÁRIA (RESPEITANDO MATRÍCULA) ====================
+        // ==================== CHAMADA DIÁRIA ====================
         function carregarAlunosParaChamada() {
             const turma = document.getElementById('chamada-turma-select').value;
             const alunosTurma = appState.alunos
@@ -1625,7 +1634,7 @@
 
             tabelaCorpo.innerHTML = alunosTurma.map(a => {
                 const eTransferido = a.status === 'TRANSFERIDO';
-                const dataMatricula = a.dataMatricula || '2026-01-01';
+                const dataMatricula = a.dataMatricula || '2026-02-02';
                 const antesDaMatricula = dataSelecionada && dataSelecionada < dataMatricula;
 
                 const faltasBimestre = getFaltasAlunoBimestre(a.id, bimestreAtual);
@@ -1700,8 +1709,8 @@
             const turmaSelecionada = document.getElementById('chamada-turma-select').value;
             const alunosTurma = appState.alunos.filter(a => {
                 if (a.turma !== turmaSelecionada || a.status === 'TRANSFERIDO') return false;
-                const dataMatricula = a.dataMatricula || '2026-01-01';
-                if (dataChamada < dataMatricula) return false; // Não salva para antes da matrícula
+                const dataMatricula = a.dataMatricula || '2026-02-02';
+                if (dataChamada < dataMatricula) return false;
                 return true;
             });
 
@@ -1741,8 +1750,8 @@
 
             let alunosEmAlerta = appState.alunos.filter(aluno => {
                 if (aluno.status === 'TRANSFERIDO') return false;
-                const dataMatricula = aluno.dataMatricula || '2026-01-01';
-                if (dataBuscaSelecionada < dataMatricula) return false; // Antes da matrícula não tem busca ativa
+                const dataMatricula = aluno.dataMatricula || '2026-02-02';
+                if (dataBuscaSelecionada < dataMatricula) return false;
 
                 const faltas = getFaltasAlunoBimestre(aluno.id, bimestreDinamico);
                 const faltouNoDia = faltas.some(f => f.data === dataBuscaSelecionada);
@@ -1852,7 +1861,7 @@
 
                 const faltosos = appState.alunos.filter(aluno => {
                     if (aluno.status === 'TRANSFERIDO') return false;
-                    const dataMatricula = aluno.dataMatricula || '2026-01-01';
+                    const dataMatricula = aluno.dataMatricula || '2026-02-02';
                     if (dataRef < dataMatricula) return false;
 
                     if (turmaFiltro !== 'TODAS' && aluno.turma !== turmaFiltro) return false;
@@ -1908,7 +1917,7 @@
 
                 const pendentes = appState.alunos.filter(aluno => {
                     if (aluno.status === 'TRANSFERIDO') return false;
-                    const dataMatricula = aluno.dataMatricula || '2026-01-01';
+                    const dataMatricula = aluno.dataMatricula || '2026-02-02';
                     if (dataRef < dataMatricula) return false;
 
                     if (turmaFiltro !== 'TODAS' && aluno.turma !== turmaFiltro) return false;
@@ -2007,7 +2016,7 @@
             showToast('Registro de Busca Ativa gravado!');
         }
 
-        // ==================== RELATÓRIO MENSAL BOLSA FAMÍLIA (RESPEITANDO MATRÍCULA) ====================
+        // ==================== RELATÓRIO MENSAL BOLSA FAMÍLIA ====================
         function renderizarRelatorioBolsa() {
             const mesSelecionado = parseInt(document.getElementById('bolsa-mes-select').value);
             const turmaFiltro = document.getElementById('bolsa-turma-select').value;
@@ -2033,9 +2042,9 @@
                 
                 if (!eBeneficiario || !atendeTurma) return false;
 
-                const dataMatricula = aluno.dataMatricula || '2026-01-01';
+                const dataMatricula = aluno.dataMatricula || '2026-02-02';
                 const divisorDias = contarDiasLetivosMarcadosNoPeriodo(primeiroDiaMes, ultimoDiaMes, dataMatricula);
-                if (divisorDias <= 0 && aluno.status !== 'TRANSFERIDO') return false; // Sem dias letivos no mês para este aluno
+                if (divisorDias <= 0 && aluno.status !== 'TRANSFERIDO') return false;
 
                 if (statusFiltro === 'RISCO') {
                     if (aluno.status === 'TRANSFERIDO') return false;
@@ -2057,7 +2066,7 @@
             }
 
             tabelaCorpo.innerHTML = beneficiarios.map(aluno => {
-                const dataMatricula = aluno.dataMatricula || '2026-01-01';
+                const dataMatricula = aluno.dataMatricula || '2026-02-02';
                 const dataMatriculaBR = dataMatricula.split('-').reverse().join('/');
                 const divisorDiasAluno = contarDiasLetivosMarcadosNoPeriodo(primeiroDiaMes, ultimoDiaMes, dataMatricula);
 
@@ -2164,7 +2173,7 @@
 
             tabelaCorpo.innerHTML = alunosFiltrados.map(aluno => {
                 const eTransferido = aluno.status === 'TRANSFERIDO';
-                const dataMatricula = aluno.dataMatricula || 'Não informada';
+                const dataMatricula = aluno.dataMatricula || '2026-02-02';
                 const dataMatriculaBR = dataMatricula.includes('-') ? dataMatricula.split('-').reverse().join('/') : dataMatricula;
 
                 return `
@@ -2214,13 +2223,13 @@
 
         function abrirModalAluno() {
             if (perfilAtual === 'professor') return;
-            const hoje = new Date().toISOString().split('T')[0];
+            const dataInicioAno = '2026-02-02'; // Padrão 2 de fevereiro
 
             document.getElementById('form-aluno-id').value = '';
             document.getElementById('form-aluno-numero').value = '';
             document.getElementById('form-aluno-nome').value = '';
             document.getElementById('form-aluno-ra').value = '';
-            document.getElementById('form-aluno-data-matricula').value = hoje;
+            document.getElementById('form-aluno-data-matricula').value = dataInicioAno;
             document.getElementById('form-aluno-tutor').value = '';
             document.getElementById('form-aluno-status').value = 'ATIVO';
             document.getElementById('form-aluno-data-transf').value = '';
@@ -2244,7 +2253,7 @@
             document.getElementById('form-aluno-nome').value = aluno.nome;
             document.getElementById('form-aluno-ra').value = aluno.ra;
             document.getElementById('form-aluno-turma').value = aluno.turma;
-            document.getElementById('form-aluno-data-matricula').value = aluno.dataMatricula || new Date().toISOString().split('T')[0];
+            document.getElementById('form-aluno-data-matricula').value = aluno.dataMatricula || '2026-02-02';
             document.getElementById('form-aluno-tutor').value = aluno.tutor || '';
             document.getElementById('form-aluno-status').value = aluno.status || 'ATIVO';
             document.getElementById('form-aluno-data-transf').value = aluno.dataTransferencia || '';
@@ -2269,7 +2278,7 @@
             const turma = document.getElementById('form-aluno-turma').value;
             const nome = document.getElementById('form-aluno-nome').value.trim();
             const ra = document.getElementById('form-aluno-ra').value.trim();
-            const dataMatricula = document.getElementById('form-aluno-data-matricula').value;
+            const dataMatricula = document.getElementById('form-aluno-data-matricula').value || '2026-02-02';
             const tutor = document.getElementById('form-aluno-tutor').value;
             const status = document.getElementById('form-aluno-status').value;
             const dataTransferencia = document.getElementById('form-aluno-data-transf').value;
@@ -2317,7 +2326,7 @@
         }
 
         // ==================== CALENDÁRIO VISUAL DE DIAS LETIVOS (L) ====================
-        let mesSelecionadoCalendario = 2; // Inicia em Fevereiro (2) do ano atual
+        let mesSelecionadoCalendario = 2;
 
         const nomesMeses = [
             "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", 
@@ -2468,7 +2477,6 @@
             aoMudarDataChamada();
         }
 
-        // INICIALIZAÇÃO
         window.addEventListener('DOMContentLoaded', () => {
             definirDataHoje();
             aplicarPermissoesPerfil();
