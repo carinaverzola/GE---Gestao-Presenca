@@ -129,7 +129,7 @@
             <section id="section-dashboard" class="tab-content space-y-6">
                 <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
                     <h2 class="text-xl font-bold text-slate-800 mb-1">Painel Escolar Resumido</h2>
-                    <p class="text-sm text-slate-500">Acompanhamento em tempo real sincronizado entre todas as máquinas (considerando datas de matrícula e transferência).</p>
+                    <p class="text-sm text-slate-500">Acompanhamento em tempo real sincronizado (validação diária de busca ativa independente).</p>
 
                     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
                         <div class="bg-slate-50 border border-slate-200 p-4 rounded-xl">
@@ -291,7 +291,7 @@
                         <div>
                             <h2 class="text-xl font-bold text-slate-800">Painel de Busca Ativa Escolar</h2>
                             <p class="text-xs text-amber-600 font-semibold mt-1">
-                                <i class="fa-solid fa-triangle-exclamation"></i> Alunos faltosos (após a data de matrícula) entram automaticamente nesta lista.
+                                <i class="fa-solid fa-triangle-exclamation"></i> O status de contato é diário e validado por data. Contatos anteriores ficam salvos no histórico.
                             </p>
                         </div>
                         <div class="flex flex-wrap items-center gap-3">
@@ -325,7 +325,7 @@
                                     <th class="p-3">Turma / Tutor</th>
                                     <th class="p-3">Situação da Falta</th>
                                     <th class="p-3">Responsável</th>
-                                    <th class="p-3">Último Status</th>
+                                    <th class="p-3">Último Status (Hoje)</th>
                                     <th class="p-3 text-center">Ações</th>
                                 </tr>
                             </thead>
@@ -559,7 +559,7 @@
                 <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-6">
                     <div>
                         <h2 class="text-xl font-bold text-slate-800 mb-1">Calendário Escolar e Marcação de Dias Letivos (L)</h2>
-                        <p class="text-xs text-slate-500">Navegue pelos meses do ano, clique nos dias letivos para marcá-los com <strong>[ L ]</strong> (considerando feriados e emendas) e defina os períodos dos bimestres para a Busca Ativa.</p>
+                        <p class="text-xs text-slate-500">Navegue pelos meses do ano, clique nos dias letivos para marcá-los com <strong>[ L ]</strong> e defina os períodos dos bimestres para a Busca Ativa.</p>
                     </div>
 
                     <!-- Configuração dos Bimestres para Busca Ativa -->
@@ -804,11 +804,9 @@
                     <input type="text" id="form-aluno-ra" class="w-full border rounded-lg p-2 bg-slate-50">
                 </div>
 
-                <!-- CAMPO DATA DE MATRÍCULA (PADRÃO 02/02/2026) -->
                 <div>
                     <label class="block text-xs font-bold text-brand-700 mb-1">Data de Matrícula na Escola</label>
                     <input type="date" id="form-aluno-data-matricula" class="w-full border border-brand-300 rounded-lg p-2 bg-brand-50/50 text-xs font-semibold">
-                    <p class="text-[10px] text-slate-500 mt-0.5">Chamada e cálculos iniciam apenas a partir desta data.</p>
                 </div>
 
                 <div>
@@ -816,7 +814,6 @@
                     <select id="form-aluno-tutor" class="w-full border rounded-lg p-2 bg-slate-50 font-semibold"></select>
                 </div>
 
-                <!-- CAMPO STATUS DA MATRÍCULA -->
                 <div class="p-3 bg-slate-50 rounded-lg border border-slate-200">
                     <label class="block text-xs font-bold text-slate-700 mb-1">Situação da Matrícula</label>
                     <select id="form-aluno-status" onchange="alternarCamposTransferencia()" class="w-full border rounded-lg p-2 bg-white font-semibold text-xs">
@@ -1002,7 +999,6 @@
                 appState.alunos = [];
                 snapshot.forEach(doc => {
                     const dados = doc.data();
-                    // Se o aluno não tiver data de matrícula cadastrada, define 02 de fevereiro por padrão
                     if (!dados.dataMatricula) {
                         dados.dataMatricula = '2026-02-02';
                     }
@@ -1034,7 +1030,7 @@
             db.collection("contatosBusca").onSnapshot(snapshot => {
                 appState.contatosBusca = {};
                 snapshot.forEach(doc => {
-                    appState.contatosBusca[doc.id] = doc.data().historico || [];
+                    appState.contatosBusca[doc.id] = doc.data() || { historico: [] };
                 });
                 atualizarTelaAtual();
             });
@@ -1536,9 +1532,12 @@
                 const faltouNoDia = faltasArray.some(f => f.data === dataHojeStr);
                 if (faltouNoDia) {
                     const temAtestadoMedico = alunoTemAtestadoMedicoNoPeriodo(aluno.id, dataHojeStr, dataHojeStr);
-                    const historico = appState.contatosBusca[aluno.id] || [];
-                    const temContatoNoDia = historico.some(h => h.data === dataHojeStr);
-                    if (!temAtestadoMedico && !temContatoNoDia) {
+                    const docContato = appState.contatosBusca[aluno.id] || { historico: [] };
+                    const historico = docContato.historico || [];
+                    const ultimoContato = historico.length > 0 ? historico[historico.length - 1] : null;
+                    const contatoRealizadoHoje = ultimoContato && ultimoContato.data === dataHojeStr;
+
+                    if (!temAtestadoMedico && !contatoRealizadoHoje) {
                         contBuscaAtiva++;
                     }
                 }
@@ -1578,9 +1577,12 @@
                 const faltasArray = getFaltasAlunoBimestre(a.id, bimestreAtual);
                 const faltou = faltasArray.some(f => f.data === dataHojeStr);
                 const comAtestado = alunoTemAtestadoMedicoNoPeriodo(a.id, dataHojeStr, dataHojeStr);
-                const historico = appState.contatosBusca[a.id] || [];
-                const contato = historico.some(h => h.data === dataHojeStr);
-                return faltou && !comAtestado && !contato;
+                const docContato = appState.contatosBusca[a.id] || { historico: [] };
+                const historico = docContato.historico || [];
+                const ultimoContato = historico.length > 0 ? historico[historico.length - 1] : null;
+                const contatoRealizadoHoje = ultimoContato && ultimoContato.data === dataHojeStr;
+
+                return faltou && !comAtestado && !contatoRealizadoHoje;
             }).slice(0, 4);
 
             if (alunosRisco.length === 0) {
@@ -1714,25 +1716,27 @@
                 return true;
             });
 
-            const batch = db.batch();
-
-            alunosTurma.forEach(aluno => {
+            // ATUALIZAÇÃO GRANULAR: Atualiza apenas o documento de faltas específico de cada aluno para evitar race condition
+            for (const aluno of alunosTurma) {
                 const btnAusente = document.querySelector(`.btn-presenca[data-aluno-id="${aluno.id}"][data-status="F"].bg-rose-600`);
-                const bimestresExistentes = appState.faltasDetalhadas[aluno.id] || {};
-                let listaBimestre = bimestresExistentes[bimestre] || [];
-
-                listaBimestre = listaBimestre.filter(f => f.data !== dataChamada);
-
-                if (btnAusente) {
-                    listaBimestre.push({ data: dataChamada });
-                }
-
-                bimestresExistentes[bimestre] = listaBimestre;
                 const docRef = db.collection("faltas").doc(aluno.id);
-                batch.set(docRef, { bimestres: bimestresExistentes }, { merge: true });
-            });
+                
+                // Usamos transação ou leitura fresca se necessário, mas com atualização por documento isolado evitamos sobrescrever a turma ou outras telas
+                await db.runTransaction(async (transaction) => {
+                    const docSnap = await transaction.get(docRef);
+                    let bimestresExistentes = docSnap.exists ? (docSnap.data().bimestres || {}) : {};
+                    let listaBimestre = bimestresExistentes[bimestre] || [];
 
-            await batch.commit();
+                    listaBimestre = listaBimestre.filter(f => f.data !== dataChamada);
+                    if (btnAusente) {
+                        listaBimestre.push({ data: dataChamada });
+                    }
+
+                    bimestresExistentes[bimestre] = listaBimestre;
+                    transaction.set(docRef, { bimestres: bimestresExistentes }, { merge: true });
+                });
+            }
+
             showToast('Chamada atualizada com sucesso!');
         }
 
@@ -1769,9 +1773,12 @@
             let semContatoNaData = 0;
 
             alunosEmAlerta.forEach(aluno => {
-                const historico = appState.contatosBusca[aluno.id] || [];
-                const temContatoNoDia = historico.some(h => h.data === dataBuscaSelecionada);
-                if (!temContatoNoDia) {
+                const docContato = appState.contatosBusca[aluno.id] || { historico: [] };
+                const historico = docContato.historico || [];
+                const ultimoContato = historico.length > 0 ? historico[historico.length - 1] : null;
+                const contatoRealizadoHoje = ultimoContato && ultimoContato.data === dataBuscaSelecionada;
+
+                if (!contatoRealizadoHoje) {
                     semContatoNaData++;
                 }
             });
@@ -1781,7 +1788,7 @@
                     <span><i class="fa-solid fa-calendar-day mr-1"></i> Data: <strong>${dataBuscaSelecionada.split('-').reverse().join('/')}</strong> (${bimestreDinamico}º Bim.)</span>
                     <span>Pendentes Busca Ativa (Sem Atestado): <strong>${faltososNaData}</strong></span>
                     <span class="${semContatoNaData > 0 ? 'text-rose-700 font-bold' : 'text-emerald-700 font-bold'}">
-                        <i class="fa-solid fa-bell mr-1"></i> Sem Contato: ${semContatoNaData}
+                        <i class="fa-solid fa-bell mr-1"></i> Sem Contato Hoje: ${semContatoNaData}
                     </span>
                 `;
             }
@@ -1794,24 +1801,29 @@
             }
 
             tabelaCorpo.innerHTML = alunosEmAlerta.map(aluno => {
-                const historico = appState.contatosBusca[aluno.id] || [];
+                const docContato = appState.contatosBusca[aluno.id] || { historico: [] };
+                const historico = docContato.historico || [];
                 const ultimoContato = historico.length > 0 ? historico[historico.length - 1] : null;
 
-                const temContatoNoDia = historico.some(h => h.data === dataBuscaSelecionada);
-                let statusBadge = '<span class="bg-rose-100 text-rose-800 text-xs px-2 py-1 rounded-full font-bold">Contato Pendente</span>';
-                if (ultimoContato) {
-                    statusBadge = `<span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-semibold">${ultimoContato.status}</span>`;
+                const contatoRealizadoHoje = ultimoContato && ultimoContato.data === dataBuscaSelecionada;
+                
+                let statusBadge = '<span class="bg-rose-100 text-rose-800 text-xs px-2.5 py-1 rounded-full font-bold">Contato Pendente (Hoje)</span>';
+                if (contatoRealizadoHoje) {
+                    statusBadge = `<span class="bg-blue-100 text-blue-800 text-xs px-2.5 py-1 rounded-semibold">${ultimoContato.status} (${ultimoContato.data.split('-').reverse().join('/')})</span>`;
+                } else if (ultimoContato) {
+                    // Contato foi feito em dia anterior -> Exibe pendente para hoje, mas mostra aviso do anterior
+                    statusBadge = `<span class="bg-rose-100 text-rose-800 text-xs px-2.5 py-1 rounded-full font-bold">Contato Pendente (Hoje)</span>`;
                 }
 
                 const responsavel = aluno.responsavel || 'Não Informado';
 
                 return `
-                    <tr class="hover:bg-slate-50 ${!temContatoNoDia ? 'bg-amber-50/60 border-l-4 border-amber-500' : ''}">
+                    <tr class="hover:bg-slate-50 ${!contatoRealizadoHoje ? 'bg-amber-50/60 border-l-4 border-amber-500' : 'bg-emerald-50/30'}">
                         <td class="p-3 text-center font-bold text-slate-700">${aluno.numero || '-'}</td>
                         <td class="p-3">
                             <span class="font-bold text-slate-800 block">${aluno.nome}</span>
                             <span class="text-xs font-mono text-slate-400">RA: ${aluno.ra}</span>
-                            ${!temContatoNoDia ? '<span class="inline-block mt-1 bg-amber-200 text-amber-900 font-bold text-[10px] px-2 py-0.5 rounded">Faltou sem contato!</span>' : ''}
+                            ${!contatoRealizadoHoje ? '<span class="inline-block mt-1 bg-amber-200 text-amber-900 font-bold text-[10px] px-2 py-0.5 rounded">Faltou hoje sem contato!</span>' : '<span class="inline-block mt-1 bg-emerald-200 text-emerald-900 font-bold text-[10px] px-2 py-0.5 rounded">Contato realizado hoje</span>'}
                         </td>
                         <td class="p-3 text-xs">
                             <span class="font-bold text-slate-700 block">${aluno.turma}</span>
@@ -1884,12 +1896,13 @@
 
                 tabelaCorpo.innerHTML = faltosos.map(aluno => {
                     const responsavel = aluno.responsavel || 'Não informado';
-                    const historico = appState.contatosBusca[aluno.id] || [];
-                    const temContatoNoDia = historico.some(h => h.data === dataRef);
+                    const docContato = appState.contatosBusca[aluno.id] || { historico: [] };
+                    const historico = docContato.historico || [];
                     const ultimoContato = historico.length > 0 ? historico[historico.length - 1] : null;
+                    const contatoRealizadoNoDia = ultimoContato && ultimoContato.data === dataRef;
 
-                    let statusTexto = '<span class="bg-rose-100 text-rose-800 font-bold px-2.5 py-1 rounded text-xs">Pendente de Contato</span>';
-                    if (temContatoNoDia && ultimoContato) {
+                    let statusTexto = '<span class="bg-rose-100 text-rose-800 font-bold px-2.5 py-1 rounded text-xs">Pendente de Contato (Hoje)</span>';
+                    if (contatoRealizadoNoDia && ultimoContato) {
                         statusTexto = `<span class="bg-emerald-100 text-emerald-800 font-bold px-2.5 py-1 rounded text-xs">Contato Realizado (${ultimoContato.status})</span>`;
                     }
 
@@ -1930,15 +1943,18 @@
                     const temAtestado = alunoTemAtestadoMedicoNoPeriodo(aluno.id, dataRef, dataRef);
                     if (temAtestado) return false;
 
-                    const historico = appState.contatosBusca[aluno.id] || [];
-                    const temContatoNoDia = historico.some(h => h.data === dataRef);
-                    return !temContatoNoDia;
+                    const docContato = appState.contatosBusca[aluno.id] || { historico: [] };
+                    const historico = docContato.historico || [];
+                    const ultimoContato = historico.length > 0 ? historico[historico.length - 1] : null;
+                    const contatoRealizadoNoDia = ultimoContato && ultimoContato.data === dataRef;
+
+                    return !contatoRealizadoNoDia;
                 });
 
-                resumoEl.innerHTML = `Data: ${dataBR} (${bimestreDinamico}º Bim.) | Turma: ${turmaFiltro} | Tutor: ${tutorFiltro} | Alunos SEM Contato: ${pendentes.length}`;
+                resumoEl.innerHTML = `Data: ${dataBR} (${bimestreDinamico}º Bim.) | Turma: ${turmaFiltro} | Tutor: ${tutorFiltro} | Alunos SEM Contato Hoje: ${pendentes.length}`;
 
                 if (pendentes.length === 0) {
-                    tabelaCorpo.innerHTML = '<tr><td colspan="6" class="p-4 text-center text-slate-400 text-xs">Parabéns! Todos os faltosos já tiveram contato registrado.</td></tr>';
+                    tabelaCorpo.innerHTML = '<tr><td colspan="6" class="p-4 text-center text-slate-400 text-xs">Parabéns! Todos os faltosos já tiveram contato registrado para hoje.</td></tr>';
                     return;
                 }
 
@@ -1958,7 +1974,7 @@
                                 <p class="text-slate-500">${aluno.telefone}</p>
                             </td>
                             <td class="p-3 text-xs">
-                                <span class="bg-rose-100 text-rose-800 font-bold px-2 py-0.5 rounded">Pendente de Contato</span>
+                                <span class="bg-rose-100 text-rose-800 font-bold px-2 py-0.5 rounded">Pendente de Contato Hoje</span>
                             </td>
                         </tr>
                     `;
@@ -1975,17 +1991,18 @@
             document.getElementById('contato-pessoa').value = aluno.responsavel || '';
             document.getElementById('contato-obs').value = '';
 
-            const historico = appState.contatosBusca[alunoId] || [];
+            const docContato = appState.contatosBusca[alunoId] || { historico: [] };
+            const historico = docContato.historico || [];
             const histEl = document.getElementById('modal-historico-lista');
 
             if (historico.length === 0) {
                 histEl.innerHTML = '<p class="text-slate-400 text-center py-2">Nenhum registro anterior cadastrado.</p>';
             } else {
-                histEl.innerHTML = historico.map(h => `
+                histEl.innerHTML = historico.slice().reverse().map(h => `
                     <div class="border-b pb-1.5">
                         <div class="flex justify-between font-semibold text-slate-700">
                             <span>${h.meio} (${h.pessoa})</span>
-                            <span class="text-slate-400">${h.data}</span>
+                            <span class="text-slate-400">${h.data.split('-').reverse().join('/')}</span>
                         </div>
                         <p class="text-slate-600">${h.obs}</p>
                         <span class="text-brand-600 font-semibold text-[10px] uppercase">${h.status}</span>
@@ -2008,10 +2025,17 @@
             const obs = document.getElementById('contato-obs').value;
             const dataHoje = document.getElementById('filtro-busca-data').value || new Date().toISOString().split('T')[0];
 
-            const historicoAtual = appState.contatosBusca[alunoId] || [];
-            historicoAtual.push({ data: dataHoje, meio, status, pessoa, obs });
+            const docRef = db.collection("contatosBusca").doc(alunoId);
+            
+            // ATUALIZAÇÃO GRANULAR: Usa transação para adicionar ao array de histórico do aluno específico sem afetar dados de outros alunos ou módulos
+            await db.runTransaction(async (transaction) => {
+                const docSnap = await transaction.get(docRef);
+                let historicoAtual = docSnap.exists ? (docSnap.data().historico || []) : [];
+                
+                historicoAtual.push({ data: dataHoje, meio, status, pessoa, obs });
+                transaction.set(docRef, { historico: historicoAtual }, { merge: true });
+            });
 
-            await db.collection("contatosBusca").doc(alunoId).set({ historico: historicoAtual });
             fecharModalContato();
             showToast('Registro de Busca Ativa gravado!');
         }
@@ -2223,7 +2247,7 @@
 
         function abrirModalAluno() {
             if (perfilAtual === 'professor') return;
-            const dataInicioAno = '2026-02-02'; // Padrão 2 de fevereiro
+            const dataInicioAno = '2026-02-02';
 
             document.getElementById('form-aluno-id').value = '';
             document.getElementById('form-aluno-numero').value = '';
