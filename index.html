@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema de Gestão Escolar - EE Professor José Carlos Donadeli Panice</title>
+    <title>Sistema de Gestão Escolar - Busca Ativa & Bolsa Família</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- FontAwesome Icons -->
@@ -129,7 +129,7 @@
             <section id="section-dashboard" class="tab-content space-y-6">
                 <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
                     <h2 class="text-xl font-bold text-slate-800 mb-1">Painel Escolar Resumido</h2>
-                    <p class="text-sm text-slate-500">Acompanhamento em tempo real sincronizado entre todas as máquinas (Alunos transferidos deduzidos).</p>
+                    <p class="text-sm text-slate-500">Acompanhamento em tempo real sincronizado entre todas as máquinas (considerando datas de matrícula e transferência).</p>
 
                     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
                         <div class="bg-slate-50 border border-slate-200 p-4 rounded-xl">
@@ -189,10 +189,10 @@
             <section id="section-chamada" class="tab-content hidden space-y-6">
                 <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
                     <div class="flex justify-between items-center mb-4">
-                        <h2 class="text-xl font-bold text-slate-800">Chamada Diária (Dia Independente)</h2>
+                        <h2 class="text-xl font-bold text-slate-800">Chamada Diária (Respeitando Data de Matrícula)</h2>
                         <span id="aviso-perfil-chamada" class="text-xs bg-amber-100 text-amber-800 font-bold px-3 py-1 rounded-full hidden">Modo Consulta (Apenas Secretaria edita a chamada)</span>
                     </div>
-                    <p class="text-xs text-slate-500 mb-4">Ao mudar a data, o sistema abre com todos os alunos como Presentes (P) para você registrar as ausências daquele dia.</p>
+                    <p class="text-xs text-slate-500 mb-4">Alunos matriculados após a data selecionada aparecem automaticamente com chamada inativa (pré-matrícula).</p>
 
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
                         <div>
@@ -221,7 +221,7 @@
                                     <th class="p-3 w-16 text-center">Nº</th>
                                     <th class="p-3">RA</th>
                                     <th class="p-3">Nome do Aluno</th>
-                                    <th class="p-3">Bolsa Família</th>
+                                    <th class="p-3">Data de Matrícula</th>
                                     <th class="p-3 text-center">Presença do Dia</th>
                                 </tr>
                             </thead>
@@ -243,8 +243,8 @@
                 <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
                     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
                         <div>
-                            <h2 class="text-xl font-bold text-slate-800">Controle de Atestados e Justificativas</h2>
-                            <p class="text-xs text-slate-500 mt-0.5">Secretaria cadastra e gere os documentos. Professores consultam em tempo real.</p>
+                            <h2 class="text-xl font-bold text-slate-800">Controle de Atestados e Justificativas (Secretaria)</h2>
+                            <p class="text-xs text-slate-500 mt-0.5">Cadastre os atestados entregues pelos pais. O sistema removerá as faltas médicas da Busca Ativa e listará os atestados no Bolsa Família para sua prestação de contas.</p>
                         </div>
                         <div id="btn-novo-atestado-container" class="hidden">
                             <button onclick="abrirModalAtestado()" class="bg-teal-600 hover:bg-teal-700 text-white text-sm px-4 py-2 rounded-lg flex items-center space-x-2 font-medium">
@@ -255,7 +255,7 @@
                     </div>
 
                     <div id="aviso-perfil-atestado" class="mb-4 p-3 bg-amber-50 border border-amber-200 text-amber-800 text-xs font-semibold rounded-lg hidden">
-                        <i class="fa-solid fa-lock mr-1"></i> Modo Consulta (Professor): Visualização de atestados permitida. Apenas a Secretaria cadastra ou exclui.
+                        <i class="fa-solid fa-lock mr-1"></i> Modo Consulta: Apenas a Secretaria pode cadastrar ou excluir atestados.
                     </div>
 
                     <div class="mb-4 flex gap-3">
@@ -291,7 +291,7 @@
                         <div>
                             <h2 class="text-xl font-bold text-slate-800">Painel de Busca Ativa Escolar</h2>
                             <p class="text-xs text-amber-600 font-semibold mt-1">
-                                <i class="fa-solid fa-triangle-exclamation"></i> Alunos faltosos sem atestado médico entram automaticamente nesta lista.
+                                <i class="fa-solid fa-triangle-exclamation"></i> Alunos faltosos (após a data de matrícula) entram automaticamente nesta lista.
                             </p>
                         </div>
                         <div class="flex flex-wrap items-center gap-3">
@@ -408,7 +408,7 @@
                     <div class="flex justify-between items-center mb-6 no-print">
                         <div>
                             <h2 class="text-xl font-bold text-slate-800">Acompanhamento Mensal do Bolsa Família (MEC / SICC)</h2>
-                            <p class="text-xs text-slate-500">Contagem de frequência oficial sobre dias letivos [L] com exibição de atestados para justificativa manual.</p>
+                            <p class="text-xs text-slate-500">Contagem de frequência calculada a partir da data de matrícula de cada aluno.</p>
                         </div>
                         <button onclick="window.print()" class="bg-slate-800 hover:bg-slate-900 text-white text-sm px-4 py-2 rounded-lg flex items-center space-x-2">
                             <i class="fa-solid fa-print"></i>
@@ -463,8 +463,8 @@
                                     <th class="p-3 w-16 text-center">Nº</th>
                                     <th class="p-3">RA</th>
                                     <th class="p-3">Nome do Aluno</th>
-                                    <th class="p-3">Turma</th>
-                                    <th class="p-3 text-center">Dias Pres.</th>
+                                    <th class="p-3">Turma / Matrícula</th>
+                                    <th class="p-3 text-center">Dias Válidos / Pres.</th>
                                     <th class="p-3 text-center">Total Faltas</th>
                                     <th class="p-3 text-center">% Freq. do Mês</th>
                                     <th class="p-3">Situação Benefício & Atestados para Justificativa</th>
@@ -541,9 +541,9 @@
                                     <th class="p-3">RA</th>
                                     <th class="p-3">Aluno</th>
                                     <th class="p-3">Turma</th>
-                                    <th class="p-3">Professor Tutor</th>
+                                    <th class="p-3">Data Matrícula</th>
                                     <th class="p-3">Status Matrícula</th>
-                                    <th class="p-3">Responsável</th>
+                                    <th class="p-3">Professor Tutor</th>
                                     <th class="p-3">Bolsa Família</th>
                                     <th id="th-acoes-aluno" class="p-3 text-center">Ações</th>
                                 </tr>
@@ -658,7 +658,7 @@
         </div>
     </div>
 
-    <!-- MODAL ATESTADO / JUSTIFICATIVA -->
+    <!-- MODAL ATESTADO / JUSTIFICATIVA (SECRETARIA) -->
     <div id="modal-atestado" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
         <div class="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
             <div class="flex justify-between items-center mb-4 border-b pb-3">
@@ -802,6 +802,13 @@
                 <div>
                     <label class="block text-xs font-semibold text-slate-600 mb-1">RA (Registro Aluno)</label>
                     <input type="text" id="form-aluno-ra" class="w-full border rounded-lg p-2 bg-slate-50">
+                </div>
+
+                <!-- CAMPO DATA DE MATRÍCULA -->
+                <div>
+                    <label class="block text-xs font-bold text-brand-700 mb-1">Data de Matrícula na Escola</label>
+                    <input type="date" id="form-aluno-data-matricula" class="w-full border border-brand-300 rounded-lg p-2 bg-brand-50/50 text-xs font-semibold">
+                    <p class="text-[10px] text-slate-500 mt-0.5">Chamada e cálculos iniciam apenas a partir desta data.</p>
                 </div>
 
                 <div>
@@ -1119,7 +1126,7 @@
             });
         }
 
-        function contarDiasLetivosMarcadosNoPeriodo(dataInicioPeriodo, dataFimPeriodo) {
+        function contarDiasLetivosMarcadosNoPeriodo(dataInicioPeriodo, dataFimPeriodo, dataMatriculaAluno = null) {
             if (!appState.config || !appState.config.diasLetivos) return 0;
 
             let totalL = 0;
@@ -1127,6 +1134,9 @@
 
             Object.keys(diasMarcados).forEach(dataStr => {
                 if (diasMarcados[dataStr] === true) {
+                    // Respeita a data de matrícula do aluno (só conta dias letivos a partir da matrícula)
+                    if (dataMatriculaAluno && dataStr < dataMatriculaAluno) return;
+
                     if (dataStr >= dataInicioPeriodo && dataStr <= dataFimPeriodo) {
                         totalL++;
                     }
@@ -1140,11 +1150,15 @@
             let todasFaltas = [];
             if (!appState.faltasDetalhadas || !appState.faltasDetalhadas[alunoId]) return todasFaltas;
 
+            const aluno = appState.alunos.find(a => a.id === alunoId);
+            const dataMatricula = aluno && aluno.dataMatricula ? aluno.dataMatricula : '2026-01-01';
+
             const bimestresObj = appState.faltasDetalhadas[alunoId];
             Object.values(bimestresObj).forEach(listaFaltas => {
                 if (Array.isArray(listaFaltas)) {
                     listaFaltas.forEach(f => {
-                        if (f.data >= dataInicio && f.data <= dataFim) {
+                        // Só contabiliza faltas ocorridas a partir da data de matrícula
+                        if (f.data >= dataMatricula && f.data >= dataInicio && f.data <= dataFim) {
                             todasFaltas.push(f);
                         }
                     });
@@ -1512,6 +1526,9 @@
             let contBolsaRisco = 0;
 
             alunosAtivos.forEach(aluno => {
+                const dataMatricula = aluno.dataMatricula || '2026-01-01';
+                if (dataHojeStr < dataMatricula) return; // Se antes da matrícula, não entra na busca ativa
+
                 const faltasArray = getFaltasAlunoBimestre(aluno.id, bimestreAtual);
                 const faltouNoDia = faltasArray.some(f => f.data === dataHojeStr);
                 if (faltouNoDia) {
@@ -1524,19 +1541,18 @@
                 }
             });
 
-            // Considera o mês da data selecionada ou o mês atual do sistema para cálculo dinâmico do painel
-            const mesCorrente = dataHojeStr ? parseInt(dataHojeStr.split('-')[1]) : (new Date().getMonth() + 1);
-            const anoCorrente = dataHojeStr ? parseInt(dataHojeStr.split('-')[0]) : new Date().getFullYear();
-            
-            const primeiroDiaMes = new Date(anoCorrente, mesCorrente - 1, 1).toISOString().split('T')[0];
-            const ultimoDiaMes = new Date(anoCorrente, mesCorrente, 0).toISOString().split('T')[0];
-            const diasMesDash = contarDiasLetivosMarcadosNoPeriodo(primeiroDiaMes, ultimoDiaMes);
-            const divisorDash = diasMesDash > 0 ? diasMesDash : 20;
+            const anoAtual = new Date().getFullYear();
+            const inicioMes = `${anoAtual}-02-01`;
+            const fimMes = `${anoAtual}-02-28`;
 
             bolsaAlunosAtivos.forEach(aluno => {
-                const faltasArray = getFaltasAlunoPorIntervalo(aluno.id, primeiroDiaMes, ultimoDiaMes);
+                const dataMatricula = aluno.dataMatricula || '2026-01-01';
+                const diasMesDash = contarDiasLetivosMarcadosNoPeriodo(inicioMes, fimMes, dataMatricula);
+                const divisorDash = diasMesDash > 0 ? diasMesDash : 20;
+
+                const faltasArray = getFaltasAlunoPorIntervalo(aluno.id, inicioMes, fimMes);
                 const presencas = Math.max(0, divisorDash - faltasArray.length);
-                const freq = (presencas / divisorDash) * 100;
+                const freq = divisorDash > 0 ? (presencas / divisorDash) * 100 : 100;
                 if (freq < 75) contBolsaRisco++;
             });
 
@@ -1547,6 +1563,9 @@
 
             const listaBuscaEl = document.getElementById('dash-lista-busca');
             const alunosRisco = alunosAtivos.filter(a => {
+                const dataMatricula = a.dataMatricula || '2026-01-01';
+                if (dataHojeStr < dataMatricula) return false;
+
                 const faltasArray = getFaltasAlunoBimestre(a.id, bimestreAtual);
                 const faltou = faltasArray.some(f => f.data === dataHojeStr);
                 const comAtestado = alunoTemAtestadoMedicoNoPeriodo(a.id, dataHojeStr, dataHojeStr);
@@ -1556,7 +1575,7 @@
             }).slice(0, 4);
 
             if (alunosRisco.length === 0) {
-                listaBuscaEl.innerHTML = '<p class="text-xs text-slate-400">Nenhum aluno ativo pendente de Busca Ativa para o dia selecionado.</p>';
+                listaBuscaEl.innerHTML = '<p class="text-xs text-slate-400">Nenhum aluno ativo pendente de Busca Ativa para o dia de hoje.</p>';
             } else {
                 listaBuscaEl.innerHTML = alunosRisco.map(a => {
                     return `
@@ -1588,7 +1607,7 @@
             }).join('');
         }
 
-        // ==================== CHAMADA DIÁRIA ====================
+        // ==================== CHAMADA DIÁRIA (RESPEITANDO MATRÍCULA) ====================
         function carregarAlunosParaChamada() {
             const turma = document.getElementById('chamada-turma-select').value;
             const alunosTurma = appState.alunos
@@ -1606,25 +1625,30 @@
 
             tabelaCorpo.innerHTML = alunosTurma.map(a => {
                 const eTransferido = a.status === 'TRANSFERIDO';
+                const dataMatricula = a.dataMatricula || '2026-01-01';
+                const antesDaMatricula = dataSelecionada && dataSelecionada < dataMatricula;
+
                 const faltasBimestre = getFaltasAlunoBimestre(a.id, bimestreAtual);
                 const estaFaltandoNoDia = faltasBimestre.some(f => f.data === dataSelecionada);
 
+                let dataMatriculaBR = dataMatricula.split('-').reverse().join('/');
+
                 return `
-                    <tr class="hover:bg-slate-50 ${eTransferido ? 'bg-slate-100/70 opacity-60' : ''}">
+                    <tr class="hover:bg-slate-50 ${eTransferido || antesDaMatricula ? 'bg-slate-100/70 opacity-60' : ''}">
                         <td class="p-3 text-center font-bold text-brand-800">${a.numero || '-'}</td>
                         <td class="p-3 font-mono text-xs text-slate-500">${a.ra}</td>
                         <td class="p-3 font-medium text-slate-800">
                             ${a.nome}
                             ${eTransferido ? `<span class="ml-2 text-[10px] bg-rose-100 text-rose-800 font-bold px-2 py-0.5 rounded border border-rose-300">TRANSFERIDO</span>` : ''}
                         </td>
-                        <td class="p-3">
-                            <span class="text-xs px-2 py-0.5 rounded-full font-semibold ${a.bolsaFamilia === 'SIM' ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-500'}">
-                                ${a.bolsaFamilia === 'SIM' ? 'Bolsa Família' : 'Não Beneficiário'}
-                            </span>
+                        <td class="p-3 text-xs font-semibold text-slate-600">
+                            ${dataMatriculaBR}
                         </td>
                         <td class="p-3 text-center">
                             ${eTransferido ? `
                                 <span class="text-xs text-slate-500 font-semibold italic">Aluno Transferido</span>
+                            ` : (antesDaMatricula ? `
+                                <span class="text-xs text-amber-800 bg-amber-100 font-bold px-2.5 py-1 rounded border border-amber-300">Pré-Matrícula / Inativo</span>
                             ` : (perfilAtual === 'professor' ? `
                                 <span class="px-3 py-1 rounded text-xs font-bold ${estaFaltandoNoDia ? 'bg-rose-100 text-rose-800' : 'bg-emerald-100 text-emerald-800'}">
                                     ${estaFaltandoNoDia ? 'Ausente (F)' : 'Presente (P)'}
@@ -1634,7 +1658,7 @@
                                     <button type="button" data-aluno-id="${a.id}" data-status="P" onclick="alternarPresencaBtn(this, 'P')" class="btn-presenca px-4 py-1.5 text-xs font-bold rounded-l-lg border border-slate-300 ${!estaFaltandoNoDia ? 'bg-emerald-600 text-white' : 'bg-white text-slate-600'}">Presente (P)</button>
                                     <button type="button" data-aluno-id="${a.id}" data-status="F" onclick="alternarPresencaBtn(this, 'F')" class="btn-presenca px-4 py-1.5 text-xs font-bold rounded-r-lg border border-slate-300 ${estaFaltandoNoDia ? 'bg-rose-600 text-white' : 'bg-white text-slate-600'}">Ausente (F)</button>
                                 </div>
-                            `)}
+                            `))}
                         </td>
                     </tr>
                 `;
@@ -1674,7 +1698,12 @@
             }
 
             const turmaSelecionada = document.getElementById('chamada-turma-select').value;
-            const alunosTurma = appState.alunos.filter(a => a.turma === turmaSelecionada && a.status !== 'TRANSFERIDO');
+            const alunosTurma = appState.alunos.filter(a => {
+                if (a.turma !== turmaSelecionada || a.status === 'TRANSFERIDO') return false;
+                const dataMatricula = a.dataMatricula || '2026-01-01';
+                if (dataChamada < dataMatricula) return false; // Não salva para antes da matrícula
+                return true;
+            });
 
             const batch = db.batch();
 
@@ -1711,9 +1740,13 @@
             const resumoDiaEl = document.getElementById('busca-ativa-resumo-dia');
 
             let alunosEmAlerta = appState.alunos.filter(aluno => {
+                if (aluno.status === 'TRANSFERIDO') return false;
+                const dataMatricula = aluno.dataMatricula || '2026-01-01';
+                if (dataBuscaSelecionada < dataMatricula) return false; // Antes da matrícula não tem busca ativa
+
                 const faltas = getFaltasAlunoBimestre(aluno.id, bimestreDinamico);
                 const faltouNoDia = faltas.some(f => f.data === dataBuscaSelecionada);
-                if (!faltouNoDia || aluno.status === 'TRANSFERIDO') return false;
+                if (!faltouNoDia) return false;
 
                 const temAtestadoMedico = alunoTemAtestadoMedicoNoPeriodo(aluno.id, dataBuscaSelecionada, dataBuscaSelecionada);
                 if (temAtestadoMedico) return false;
@@ -1819,6 +1852,9 @@
 
                 const faltosos = appState.alunos.filter(aluno => {
                     if (aluno.status === 'TRANSFERIDO') return false;
+                    const dataMatricula = aluno.dataMatricula || '2026-01-01';
+                    if (dataRef < dataMatricula) return false;
+
                     if (turmaFiltro !== 'TODAS' && aluno.turma !== turmaFiltro) return false;
                     if (tutorFiltro !== 'TODOS' && (!aluno.tutor || aluno.tutor.trim() !== tutorFiltro)) return false;
                     
@@ -1872,6 +1908,9 @@
 
                 const pendentes = appState.alunos.filter(aluno => {
                     if (aluno.status === 'TRANSFERIDO') return false;
+                    const dataMatricula = aluno.dataMatricula || '2026-01-01';
+                    if (dataRef < dataMatricula) return false;
+
                     if (turmaFiltro !== 'TODAS' && aluno.turma !== turmaFiltro) return false;
                     if (tutorFiltro !== 'TODOS' && (!aluno.tutor || aluno.tutor.trim() !== tutorFiltro)) return false;
                     
@@ -1968,12 +2007,7 @@
             showToast('Registro de Busca Ativa gravado!');
         }
 
-        // ==================== RELATÓRIO MENSAL BOLSA FAMÍLIA ====================
-        const nomesMeses = [
-            "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", 
-            "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
-        ];
-
+        // ==================== RELATÓRIO MENSAL BOLSA FAMÍLIA (RESPEITANDO MATRÍCULA) ====================
         function renderizarRelatorioBolsa() {
             const mesSelecionado = parseInt(document.getElementById('bolsa-mes-select').value);
             const turmaFiltro = document.getElementById('bolsa-turma-select').value;
@@ -1984,14 +2018,12 @@
             const primeiroDiaMes = new Date(anoAtual, mesSelecionado - 1, 1).toISOString().split('T')[0];
             const ultimoDiaMes = new Date(anoAtual, mesSelecionado, 0).toISOString().split('T')[0];
             
-            const totalDiasLetivosMes = contarDiasLetivosMarcadosNoPeriodo(primeiroDiaMes, ultimoDiaMes);
-            const divisorDias = totalDiasLetivosMes > 0 ? totalDiasLetivosMes : 20;
-
+            const totalDiasLetivosMesGeral = contarDiasLetivosMarcadosNoPeriodo(primeiroDiaMes, ultimoDiaMes);
             const nomeMesFormatado = nomesMeses[mesSelecionado - 1];
 
             document.getElementById('bolsa-metrica-header').innerHTML = `
                 <span><strong>Mês de Referência (MEC):</strong> ${nomeMesFormatado} de ${anoAtual}</span>
-                <span><strong>Dias Letivos [L] no Mês:</strong> ${totalDiasLetivosMes} Dias</span>
+                <span><strong>Dias Letivos [L] Gerais no Mês:</strong> ${totalDiasLetivosMesGeral} Dias</span>
                 <span><strong>Corte Obrigatório:</strong> Mínimo 75% Frequência</span>
             `;
 
@@ -2000,6 +2032,10 @@
                 const atendeTurma = (turmaFiltro === 'TODAS' || aluno.turma === turmaFiltro);
                 
                 if (!eBeneficiario || !atendeTurma) return false;
+
+                const dataMatricula = aluno.dataMatricula || '2026-01-01';
+                const divisorDias = contarDiasLetivosMarcadosNoPeriodo(primeiroDiaMes, ultimoDiaMes, dataMatricula);
+                if (divisorDias <= 0 && aluno.status !== 'TRANSFERIDO') return false; // Sem dias letivos no mês para este aluno
 
                 if (statusFiltro === 'RISCO') {
                     if (aluno.status === 'TRANSFERIDO') return false;
@@ -2021,13 +2057,17 @@
             }
 
             tabelaCorpo.innerHTML = beneficiarios.map(aluno => {
+                const dataMatricula = aluno.dataMatricula || '2026-01-01';
+                const dataMatriculaBR = dataMatricula.split('-').reverse().join('/');
+                const divisorDiasAluno = contarDiasLetivosMarcadosNoPeriodo(primeiroDiaMes, ultimoDiaMes, dataMatricula);
+
                 const faltasArray = getFaltasAlunoPorIntervalo(aluno.id, primeiroDiaMes, ultimoDiaMes);
                 const faltasBrutas = faltasArray.length;
                 
-                const presencas = Math.max(0, divisorDias - faltasBrutas);
-                const percFrequencia = ((presencas / divisorDias) * 100).toFixed(1);
+                const presencas = Math.max(0, divisorDiasAluno - faltasBrutas);
+                const percFrequencia = divisorDiasAluno > 0 ? ((presencas / divisorDiasAluno) * 100).toFixed(1) : "100.0";
                 
-                const perdeuBeneficio = percFrequencia < 75.0;
+                const perdeuBeneficio = parseFloat(percFrequencia) < 75.0;
                 const eTransferido = aluno.status === 'TRANSFERIDO';
 
                 let dataTransfBR = '';
@@ -2048,8 +2088,13 @@
                             ${aluno.nome}
                             ${eTransferido ? `<span class="block text-[10px] text-rose-700 font-bold uppercase mt-0.5"><i class="fa-solid fa-right-from-bracket mr-1"></i> Transferido</span>` : ''}
                         </td>
-                        <td class="p-3 text-xs text-slate-600">${aluno.turma}</td>
-                        <td class="p-3 text-center font-semibold text-emerald-700">${presencas}</td>
+                        <td class="p-3 text-xs text-slate-600">
+                            ${aluno.turma}<br>
+                            <span class="text-[10px] text-slate-400">Mat: ${dataMatriculaBR}</span>
+                        </td>
+                        <td class="p-3 text-center text-xs">
+                            <span class="font-bold text-emerald-700">${presencas} pres.</span> / <span class="text-slate-500">${divisorDiasAluno} dias</span>
+                        </td>
                         <td class="p-3 text-center font-semibold text-rose-600">${faltasBrutas}</td>
                         <td class="p-3 text-center">
                             <span class="text-sm font-extrabold ${perdeuBeneficio && !eTransferido ? 'text-rose-600' : 'text-emerald-700'}">
@@ -2119,13 +2164,16 @@
 
             tabelaCorpo.innerHTML = alunosFiltrados.map(aluno => {
                 const eTransferido = aluno.status === 'TRANSFERIDO';
+                const dataMatricula = aluno.dataMatricula || 'Não informada';
+                const dataMatriculaBR = dataMatricula.includes('-') ? dataMatricula.split('-').reverse().join('/') : dataMatricula;
+
                 return `
                     <tr class="hover:bg-slate-50 ${eTransferido ? 'bg-slate-50/70' : ''}">
                         <td class="p-3 text-center font-bold text-brand-800">${aluno.numero || '-'}</td>
                         <td class="p-3 font-mono text-xs text-slate-500">${aluno.ra}</td>
                         <td class="p-3 font-bold text-slate-800">${aluno.nome}</td>
                         <td class="p-3 text-xs">${aluno.turma}</td>
-                        <td class="p-3 text-xs font-semibold text-brand-700">${aluno.tutor || 'Não atribuído'}</td>
+                        <td class="p-3 text-xs font-semibold text-brand-700">${dataMatriculaBR}</td>
                         <td class="p-3 text-xs">
                             ${eTransferido ? `
                                 <span class="bg-rose-100 text-rose-800 font-bold px-2 py-0.5 rounded-full border border-rose-300 text-[11px]">
@@ -2137,7 +2185,7 @@
                                 </span>
                             `}
                         </td>
-                        <td class="p-3 text-xs text-slate-700 font-medium">${aluno.responsavel || '-'}</td>
+                        <td class="p-3 text-xs font-semibold text-brand-700">${aluno.tutor || 'Não atribuído'}</td>
                         <td class="p-3">
                             <span class="text-xs px-2 py-0.5 rounded-full font-bold ${aluno.bolsaFamilia === 'SIM' ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-500'}">
                                 ${aluno.bolsaFamilia}
@@ -2166,10 +2214,13 @@
 
         function abrirModalAluno() {
             if (perfilAtual === 'professor') return;
+            const hoje = new Date().toISOString().split('T')[0];
+
             document.getElementById('form-aluno-id').value = '';
             document.getElementById('form-aluno-numero').value = '';
             document.getElementById('form-aluno-nome').value = '';
             document.getElementById('form-aluno-ra').value = '';
+            document.getElementById('form-aluno-data-matricula').value = hoje;
             document.getElementById('form-aluno-tutor').value = '';
             document.getElementById('form-aluno-status').value = 'ATIVO';
             document.getElementById('form-aluno-data-transf').value = '';
@@ -2193,6 +2244,7 @@
             document.getElementById('form-aluno-nome').value = aluno.nome;
             document.getElementById('form-aluno-ra').value = aluno.ra;
             document.getElementById('form-aluno-turma').value = aluno.turma;
+            document.getElementById('form-aluno-data-matricula').value = aluno.dataMatricula || new Date().toISOString().split('T')[0];
             document.getElementById('form-aluno-tutor').value = aluno.tutor || '';
             document.getElementById('form-aluno-status').value = aluno.status || 'ATIVO';
             document.getElementById('form-aluno-data-transf').value = aluno.dataTransferencia || '';
@@ -2217,6 +2269,7 @@
             const turma = document.getElementById('form-aluno-turma').value;
             const nome = document.getElementById('form-aluno-nome').value.trim();
             const ra = document.getElementById('form-aluno-ra').value.trim();
+            const dataMatricula = document.getElementById('form-aluno-data-matricula').value;
             const tutor = document.getElementById('form-aluno-tutor').value;
             const status = document.getElementById('form-aluno-status').value;
             const dataTransferencia = document.getElementById('form-aluno-data-transf').value;
@@ -2225,8 +2278,8 @@
             const telefone = document.getElementById('form-aluno-tel').value.trim();
             const bolsaFamilia = document.getElementById('form-aluno-bolsa').value;
 
-            if (!nome || !ra || !turma) {
-                alert('Preencha os campos obrigatórios: Nome, RA e Turma.');
+            if (!nome || !ra || !turma || !dataMatricula) {
+                alert('Preencha os campos obrigatórios: Nome, RA, Turma e Data de Matrícula.');
                 return;
             }
 
@@ -2235,6 +2288,7 @@
                 turma,
                 nome, 
                 ra, 
+                dataMatricula,
                 tutor,
                 status, 
                 dataTransferencia: status === 'TRANSFERIDO' ? dataTransferencia : '', 
@@ -2262,8 +2316,13 @@
             }
         }
 
-        // ==================== CALENDÁRIO VISUAL ====================
-        let mesSelecionadoCalendario = 2;
+        // ==================== CALENDÁRIO VISUAL DE DIAS LETIVOS (L) ====================
+        let mesSelecionadoCalendario = 2; // Inicia em Fevereiro (2) do ano atual
+
+        const nomesMeses = [
+            "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", 
+            "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
+        ];
 
         function carregarConfiguracoesCalendario() {
             if (appState.config && appState.config.bimestres) {
