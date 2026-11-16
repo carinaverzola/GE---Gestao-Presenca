@@ -192,7 +192,7 @@
                         <h2 class="text-xl font-bold text-slate-800">Chamada Diária (Respeitando Data de Matrícula)</h2>
                         <span id="aviso-perfil-chamada" class="text-xs bg-amber-100 text-amber-800 font-bold px-3 py-1 rounded-full hidden">Modo Consulta (Apenas Secretaria edita a chamada)</span>
                     </div>
-                    <p class="text-xs text-slate-500 mb-4">Alunos matriculados após a data selecionada aparecem automaticamente com chamada inativa (pré-matrícula).</p>
+                    <p class="text-xs text-slate-500 mb-4">Marque os alunos faltosos da turma e salve todos de uma vez só no botão ao final da página.</p>
 
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
                         <div>
@@ -222,7 +222,7 @@
                                     <th class="p-3">RA</th>
                                     <th class="p-3">Nome do Aluno</th>
                                     <th class="p-3">Data de Matrícula</th>
-                                    <th class="p-3 text-center">Presença do Dia</th>
+                                    <th class="p-3 text-center">Presença do Dia (Marque a Falta)</th>
                                 </tr>
                             </thead>
                             <tbody id="tabela-chamada-corpo" class="divide-y divide-slate-200 text-sm"></tbody>
@@ -232,7 +232,7 @@
                     <div id="btn-salvar-chamada-container" class="mt-6 flex justify-end">
                         <button onclick="salvarChamada()" class="bg-brand-600 hover:bg-brand-700 text-white font-medium px-6 py-2.5 rounded-lg shadow-sm transition-colors flex items-center space-x-2">
                             <i class="fa-solid fa-floppy-disk"></i>
-                            <span>Atualizar / Salvar Chamada do Dia</span>
+                            <span>Salvar Chamada da Turma Inteira (Lote)</span>
                         </button>
                     </div>
                 </div>
@@ -1618,7 +1618,7 @@
             }).join('');
         }
 
-        // ==================== CHAMADA DIÁRIA ====================
+        // ==================== CHAMADA DIÁRIA (ATUALIZADO PARA LOTE) ====================
         function carregarAlunosParaChamada() {
             const turma = document.getElementById('chamada-turma-select').value;
             const alunosTurma = appState.alunos
@@ -1645,7 +1645,7 @@
                 let dataMatriculaBR = dataMatricula.split('-').reverse().join('/');
 
                 return `
-                    <tr class="hover:bg-slate-50 ${eTransferido || antesDaMatricula ? 'bg-slate-100/70 opacity-60' : ''}">
+                    <tr class="hover:bg-slate-50 ${eTransferido || antesDaMatricula ? 'bg-slate-100/70 opacity-60' : ''}" data-aluno-id="${a.id}">
                         <td class="p-3 text-center font-bold text-brand-800">${a.numero || '-'}</td>
                         <td class="p-3 font-mono text-xs text-slate-500">${a.ra}</td>
                         <td class="p-3 font-medium text-slate-800">
@@ -1665,10 +1665,10 @@
                                     ${estaFaltandoNoDia ? 'Ausente (F)' : 'Presente (P)'}
                                 </span>
                             ` : `
-                                <div class="inline-flex rounded-md shadow-sm" role="group">
-                                    <button type="button" data-aluno-id="${a.id}" data-status="P" onclick="alternarPresencaBtn(this, 'P')" class="btn-presenca px-4 py-1.5 text-xs font-bold rounded-l-lg border border-slate-300 ${!estaFaltandoNoDia ? 'bg-emerald-600 text-white' : 'bg-white text-slate-600'}">Presente (P)</button>
-                                    <button type="button" data-aluno-id="${a.id}" data-status="F" onclick="alternarPresencaBtn(this, 'F')" class="btn-presenca px-4 py-1.5 text-xs font-bold rounded-r-lg border border-slate-300 ${estaFaltandoNoDia ? 'bg-rose-600 text-white' : 'bg-white text-slate-600'}">Ausente (F)</button>
-                                </div>
+                                <label class="inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" class="falta-checkbox w-5 h-5 text-rose-600 rounded border-slate-300 focus:ring-rose-500 cursor-pointer" ${estaFaltandoNoDia ? 'checked' : ''}>
+                                    <span class="ml-2 text-xs font-bold text-slate-700">Marcar Falta (Ausente)</span>
+                                </label>
                             `))}
                         </td>
                     </tr>
@@ -1676,25 +1676,7 @@
             }).join('');
         }
 
-        function alternarPresencaBtn(btn, status) {
-            const parent = btn.parentElement;
-            const btns = parent.querySelectorAll('button');
-
-            btns.forEach(b => {
-                b.classList.remove('bg-emerald-600', 'text-white', 'bg-rose-600');
-                b.classList.add('bg-white', 'text-slate-600');
-            });
-
-            if (status === 'P') {
-                btn.classList.remove('bg-white', 'text-slate-600');
-                btn.classList.add('bg-emerald-600', 'text-white');
-            } else {
-                btn.classList.remove('bg-white', 'text-slate-600');
-                btn.classList.add('bg-rose-600', 'text-white');
-            }
-            btn.dataset.status = status;
-        }
-
+        // SALVAMENTO EM LOTE DE TODA A TURMA DE UMA SÓ VEZ
         async function salvarChamada() {
             if (perfilAtual === 'professor') {
                 alert('Acesso restrito: Professores não podem salvar a chamada diária.');
@@ -1709,35 +1691,49 @@
             }
 
             const turmaSelecionada = document.getElementById('chamada-turma-select').value;
-            const alunosTurma = appState.alunos.filter(a => {
-                if (a.turma !== turmaSelecionada || a.status === 'TRANSFERIDO') return false;
-                const dataMatricula = a.dataMatricula || '2026-02-02';
-                if (dataChamada < dataMatricula) return false;
-                return true;
-            });
+            const linhasAlunos = document.querySelectorAll('#tabela-chamada-corpo tr[data-aluno-id]');
 
-            // ATUALIZAÇÃO GRANULAR: Atualiza apenas o documento de faltas específico de cada aluno para evitar race condition
-            for (const aluno of alunosTurma) {
-                const btnAusente = document.querySelector(`.btn-presenca[data-aluno-id="${aluno.id}"][data-status="F"].bg-rose-600`);
-                const docRef = db.collection("faltas").doc(aluno.id);
-                
-                // Usamos transação ou leitura fresca se necessário, mas com atualização por documento isolado evitamos sobrescrever a turma ou outras telas
-                await db.runTransaction(async (transaction) => {
-                    const docSnap = await transaction.get(docRef);
+            if (linhasAlunos.length === 0) {
+                alert('Não há alunos na lista para salvar.');
+                return;
+            }
+
+            try {
+                const batch = db.batch();
+                let totalFaltasMarcadas = 0;
+
+                for (const linha of linhasAlunos) {
+                    const alunoId = linha.getAttribute('data-aluno-id');
+                    const checkboxFalta = linha.querySelector('.falta-checkbox');
+                    
+                    // Se o checkbox não existir (ex: aluno transferido ou pré-matrícula), pula
+                    if (!checkboxFalta) continue;
+
+                    const levouFalta = checkboxFalta.checked;
+                    if (levouFalta) totalFaltasMarcadas++;
+
+                    const docRef = db.collection("faltas").doc(alunoId);
+                    const docSnap = await db.collection("faltas").doc(alunoId).get();
+                    
                     let bimestresExistentes = docSnap.exists ? (docSnap.data().bimestres || {}) : {};
                     let listaBimestre = bimestresExistentes[bimestre] || [];
 
+                    // Remove registro anterior da data e adiciona se marcou falta
                     listaBimestre = listaBimestre.filter(f => f.data !== dataChamada);
-                    if (btnAusente) {
+                    if (levouFalta) {
                         listaBimestre.push({ data: dataChamada });
                     }
 
                     bimestresExistentes[bimestre] = listaBimestre;
-                    transaction.set(docRef, { bimestres: bimestresExistentes }, { merge: true });
-                });
-            }
+                    batch.set(docRef, { bimestres: bimestresExistentes }, { merge: true });
+                }
 
-            showToast('Chamada atualizada com sucesso!');
+                await batch.commit();
+                showToast('Chamada da turma salva com sucesso!');
+            } catch (error) {
+                console.error("Erro ao salvar chamada em lote:", error);
+                alert("Erro ao salvar a chamada. Tente novamente.");
+            }
         }
 
         // ==================== BUSCA ATIVA ====================
@@ -1811,7 +1807,6 @@
                 if (contatoRealizadoHoje) {
                     statusBadge = `<span class="bg-blue-100 text-blue-800 text-xs px-2.5 py-1 rounded-semibold">${ultimoContato.status} (${ultimoContato.data.split('-').reverse().join('/')})</span>`;
                 } else if (ultimoContato) {
-                    // Contato foi feito em dia anterior -> Exibe pendente para hoje, mas mostra aviso do anterior
                     statusBadge = `<span class="bg-rose-100 text-rose-800 text-xs px-2.5 py-1 rounded-full font-bold">Contato Pendente (Hoje)</span>`;
                 }
 
@@ -2027,7 +2022,6 @@
 
             const docRef = db.collection("contatosBusca").doc(alunoId);
             
-            // ATUALIZAÇÃO GRANULAR: Usa transação para adicionar ao array de histórico do aluno específico sem afetar dados de outros alunos ou módulos
             await db.runTransaction(async (transaction) => {
                 const docSnap = await transaction.get(docRef);
                 let historicoAtual = docSnap.exists ? (docSnap.data().historico || []) : [];
