@@ -189,10 +189,10 @@
             <section id="section-chamada" class="tab-content hidden space-y-6">
                 <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
                     <div class="flex justify-between items-center mb-4">
-                        <h2 class="text-xl font-bold text-slate-800">Chamada Diária (Respeitando Data de Matrícula)</h2>
+                        <h2 class="text-xl font-bold text-slate-800">Chamada Diária por Sala (Salva a Turma Inteira)</h2>
                         <span id="aviso-perfil-chamada" class="text-xs bg-amber-100 text-amber-800 font-bold px-3 py-1 rounded-full hidden">Modo Consulta (Apenas Secretaria edita a chamada)</span>
                     </div>
-                    <p class="text-xs text-slate-500 mb-4">Marque os alunos faltosos da turma e salve todos de uma só vez no botão ao final da página.</p>
+                    <p class="text-xs text-slate-500 mb-4">Selecione a sala, alterne entre Presente (P) ou Ausente (F) para cada aluno e clique em salvar uma única vez.</p>
 
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
                         <div>
@@ -222,7 +222,7 @@
                                     <th class="p-3">RA</th>
                                     <th class="p-3">Nome do Aluno</th>
                                     <th class="p-3">Data de Matrícula</th>
-                                    <th class="p-3 text-center">Presença do Dia (Marque a Falta)</th>
+                                    <th class="p-3 text-center">Presença do Dia</th>
                                 </tr>
                             </thead>
                             <tbody id="tabela-chamada-corpo" class="divide-y divide-slate-200 text-sm"></tbody>
@@ -232,7 +232,7 @@
                     <div id="btn-salvar-chamada-container" class="mt-6 flex justify-end">
                         <button onclick="salvarChamada()" class="bg-brand-600 hover:bg-brand-700 text-white font-medium px-6 py-2.5 rounded-lg shadow-sm transition-colors flex items-center space-x-2">
                             <i class="fa-solid fa-floppy-disk"></i>
-                            <span>Salvar Chamada da Turma Inteira (Lote)</span>
+                            <span>Salvar Chamada desta Sala</span>
                         </button>
                     </div>
                 </div>
@@ -1618,7 +1618,7 @@
             }).join('');
         }
 
-        // ==================== CHAMADA DIÁRIA (ATUALIZADO PARA LOTE) ====================
+        // ==================== CHAMADA DIÁRIA POR TURMA (COM BOTÕES PRESENTE / AUSENTE) ====================
         function carregarAlunosParaChamada() {
             const turma = document.getElementById('chamada-turma-select').value;
             const alunosTurma = appState.alunos
@@ -1665,10 +1665,14 @@
                                     ${estaFaltandoNoDia ? 'Ausente (F)' : 'Presente (P)'}
                                 </span>
                             ` : `
-                                <label class="inline-flex items-center cursor-pointer">
-                                    <input type="checkbox" class="falta-checkbox w-5 h-5 text-rose-600 rounded border-slate-300 focus:ring-rose-500 cursor-pointer" ${estaFaltandoNoDia ? 'checked' : ''}>
-                                    <span class="ml-2 text-xs font-bold text-slate-700">Marcar Falta (Ausente)</span>
-                                </label>
+                                <div class="inline-flex rounded-lg border border-slate-300 overflow-hidden shadow-sm">
+                                    <button type="button" onclick="mudarStatusPresenca('${a.id}', true)" id="btn-p-${a.id}" class="px-3 py-1.5 text-xs font-bold transition-colors ${!estaFaltandoNoDia ? 'bg-emerald-600 text-white' : 'bg-white text-slate-600 hover:bg-slate-100'}">
+                                        Presente (P)
+                                    </button>
+                                    <button type="button" onclick="mudarStatusPresenca('${a.id}', false)" id="btn-f-${a.id}" class="px-3 py-1.5 text-xs font-bold transition-colors ${estaFaltandoNoDia ? 'bg-rose-600 text-white' : 'bg-white text-slate-600 hover:bg-slate-100'}">
+                                        Ausente (F)
+                                    </button>
+                                </div>
                             `))}
                         </td>
                     </tr>
@@ -1676,7 +1680,22 @@
             }).join('');
         }
 
-        // SALVAMENTO EM LOTE CORRIGIDO (GRAVA TODOS OS ALUNOS DA TURMA DE UMA SÓ VEZ COM FIRESTORE BATCH)
+        // FUNÇÃO DE ALTERNAR O ESTADO VISUAL DOS BOTÕES LADO A LADO
+        function mudarStatusPresenca(alunoId, estaPresente) {
+            const btnP = document.getElementById(`btn-p-${alunoId}`);
+            const btnF = document.getElementById(`btn-f-${alunoId}`);
+            if (!btnP || !btnF) return;
+
+            if (estaPresente) {
+                btnP.className = "px-3 py-1.5 text-xs font-bold transition-colors bg-emerald-600 text-white";
+                btnF.className = "px-3 py-1.5 text-xs font-bold transition-colors bg-white text-slate-600 hover:bg-slate-100";
+            } else {
+                btnP.className = "px-3 py-1.5 text-xs font-bold transition-colors bg-white text-slate-600 hover:bg-slate-100";
+                btnF.className = "px-3 py-1.5 text-xs font-bold transition-colors bg-rose-600 text-white";
+            }
+        }
+
+        // SALVAMENTO EM LOTE ÚNICO: GRAVA TODA A TURMA DE UMA SÓ VEZ COM TRANSAÇÃO SEGURA NO FIRESTORE
         async function salvarChamada() {
             if (perfilAtual === 'professor') {
                 alert('Acesso restrito: Professores não podem salvar a chamada diária.');
@@ -1684,62 +1703,63 @@
             }
             const bimestre = document.getElementById('chamada-bimestre-select').value;
             const dataChamada = document.getElementById('chamada-data-input').value;
+            const turmaSelecionada = document.getElementById('chamada-turma-select').value;
             
             if (!dataChamada) {
                 alert('Por favor, selecione a data da chamada.');
                 return;
             }
 
-            const turmaSelecionada = document.getElementById('chamada-turma-select').value;
             const linhasAlunos = document.querySelectorAll('#tabela-chamada-corpo tr[data-aluno-id]');
-
             if (linhasAlunos.length === 0) {
                 alert('Não há alunos na lista para salvar.');
                 return;
             }
 
             try {
-                // Cria um lote único do Firestore para enviar todas as alterações de uma vez
+                // Coleta o estado de cada botão (se o botão de falta está com fundo vermelho/ativo)
+                const statusAlunosTurma = [];
+                linhasAlunos.forEach(linha => {
+                    const alunoId = linha.getAttribute('data-aluno-id');
+                    const btnF = document.getElementById(`btn-f-${alunoId}`);
+                    if (btnF) {
+                        const levouFalta = btnF.classList.contains('bg-rose-600');
+                        statusAlunosTurma.push({
+                            alunoId: alunoId,
+                            levouFalta: levouFalta
+                        });
+                    }
+                });
+
+                // Executa em lote atômico (Batch) para cada aluno da sala simultaneamente
                 const batch = db.batch();
                 let totalFaltasMarcadas = 0;
 
-                // Percorre cada linha da tabela da turma
-                for (const linha of linhasAlunos) {
-                    const alunoId = linha.getAttribute('data-aluno-id');
-                    const checkboxFalta = linha.querySelector('.falta-checkbox');
-                    
-                    if (!checkboxFalta) continue; // Pula alunos transferidos/pré-matrícula
+                for (const item of statusAlunosTurma) {
+                    if (item.levouFalta) totalFaltasMarcadas++;
 
-                    const levouFalta = checkboxFalta.checked;
-                    if (levouFalta) totalFaltasMarcadas++;
-
-                    const docRef = db.collection("faltas").doc(alunoId);
+                    const docRef = db.collection("faltas").doc(item.alunoId);
                     
-                    // Obtém os bimestres atuais já salvos em memória para aquele aluno
-                    let bimestresExistentes = (appState.faltasDetalhadas && appState.faltasDetalhadas[alunoId]) ? 
-                        JSON.parse(JSON.stringify(appState.faltasDetalhadas[alunoId])) : {};
+                    let bimestresExistentes = (appState.faltasDetalhadas && appState.faltasDetalhadas[item.alunoId]) ? 
+                        JSON.parse(JSON.stringify(appState.faltasDetalhadas[item.alunoId])) : {};
                     
                     let listaBimestre = bimestresExistentes[bimestre] || [];
 
-                    // Remove registro anterior da data e insere se o checkbox estiver marcado
                     listaBimestre = listaBimestre.filter(f => f.data !== dataChamada);
-                    if (levouFalta) {
+                    if (item.levouFalta) {
                         listaBimestre.push({ data: dataChamada });
                     }
 
                     bimestresExistentes[bimestre] = listaBimestre;
 
-                    // Adiciona a instrução de gravação ao lote do Firestore
                     batch.set(docRef, { bimestres: bimestresExistentes }, { merge: true });
                 }
 
-                // Executa todas as gravações simultaneamente no servidor em uma única chamada
                 await batch.commit();
-
-                showToast(`Chamada salva com sucesso! (${totalFaltasMarcadas} falta(s) registrada(s)).`);
+                showToast(`Turma ${turmaSelecionada} salva com sucesso! (${totalFaltasMarcadas} falta(s) registrada(s)).`);
             } catch (error) {
-                console.error("Erro ao salvar chamada em lote:", error);
-                alert("Erro ao salvar a chamada. Tente novamente.");
+                console.error("Erro ao salvar chamada da turma:", error);
+                alert("Erro ao salvar a chamada. Verifique sua conexão e tente novamente.");
             }
         }
 
