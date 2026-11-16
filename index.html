@@ -192,7 +192,7 @@
                         <h2 class="text-xl font-bold text-slate-800">Chamada Diária (Respeitando Data de Matrícula)</h2>
                         <span id="aviso-perfil-chamada" class="text-xs bg-amber-100 text-amber-800 font-bold px-3 py-1 rounded-full hidden">Modo Consulta (Apenas Secretaria edita a chamada)</span>
                     </div>
-                    <p class="text-xs text-slate-500 mb-4">Marque os alunos faltosos da turma e salve todos de uma vez só no botão ao final da página.</p>
+                    <p class="text-xs text-slate-500 mb-4">Marque os alunos faltosos da turma e salve todos de uma só vez no botão ao final da página.</p>
 
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
                         <div>
@@ -1676,7 +1676,7 @@
             }).join('');
         }
 
-        // SALVAMENTO EM LOTE DE TODA A TURMA DE UMA SÓ VEZ
+        // SALVAMENTO EM LOTE CORRIGIDO (GRAVA TODOS OS ALUNOS DA TURMA DE UMA SÓ VEZ COM FIRESTORE BATCH)
         async function salvarChamada() {
             if (perfilAtual === 'professor') {
                 alert('Acesso restrito: Professores não podem salvar a chamada diária.');
@@ -1699,37 +1699,44 @@
             }
 
             try {
+                // Cria um lote único do Firestore para enviar todas as alterações de uma vez
                 const batch = db.batch();
                 let totalFaltasMarcadas = 0;
 
+                // Percorre cada linha da tabela da turma
                 for (const linha of linhasAlunos) {
                     const alunoId = linha.getAttribute('data-aluno-id');
                     const checkboxFalta = linha.querySelector('.falta-checkbox');
                     
-                    // Se o checkbox não existir (ex: aluno transferido ou pré-matrícula), pula
-                    if (!checkboxFalta) continue;
+                    if (!checkboxFalta) continue; // Pula alunos transferidos/pré-matrícula
 
                     const levouFalta = checkboxFalta.checked;
                     if (levouFalta) totalFaltasMarcadas++;
 
                     const docRef = db.collection("faltas").doc(alunoId);
-                    const docSnap = await db.collection("faltas").doc(alunoId).get();
                     
-                    let bimestresExistentes = docSnap.exists ? (docSnap.data().bimestres || {}) : {};
+                    // Obtém os bimestres atuais já salvos em memória para aquele aluno
+                    let bimestresExistentes = (appState.faltasDetalhadas && appState.faltasDetalhadas[alunoId]) ? 
+                        JSON.parse(JSON.stringify(appState.faltasDetalhadas[alunoId])) : {};
+                    
                     let listaBimestre = bimestresExistentes[bimestre] || [];
 
-                    // Remove registro anterior da data e adiciona se marcou falta
+                    // Remove registro anterior da data e insere se o checkbox estiver marcado
                     listaBimestre = listaBimestre.filter(f => f.data !== dataChamada);
                     if (levouFalta) {
                         listaBimestre.push({ data: dataChamada });
                     }
 
                     bimestresExistentes[bimestre] = listaBimestre;
+
+                    // Adiciona a instrução de gravação ao lote do Firestore
                     batch.set(docRef, { bimestres: bimestresExistentes }, { merge: true });
                 }
 
+                // Executa todas as gravações simultaneamente no servidor em uma única chamada
                 await batch.commit();
-                showToast('Chamada da turma salva com sucesso!');
+
+                showToast(`Chamada salva com sucesso! (${totalFaltasMarcadas} falta(s) registrada(s)).`);
             } catch (error) {
                 console.error("Erro ao salvar chamada em lote:", error);
                 alert("Erro ao salvar a chamada. Tente novamente.");
