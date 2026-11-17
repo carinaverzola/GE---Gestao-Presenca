@@ -92,6 +92,10 @@
                     <i class="fa-solid fa-clipboard-user w-5 mr-3 text-lg"></i>
                     Chamada Diária
                 </button>
+                <button onclick="switchTab('consulta-faltas')" id="tab-consulta-faltas" class="nav-btn flex items-center w-full px-4 py-3 text-sm font-medium rounded-lg text-slate-600 hover:bg-slate-50 hover:text-brand-600 transition-colors">
+                    <i class="fa-solid fa-calendar-check w-5 mr-3 text-lg text-brand-600"></i>
+                    Consulta Faltas (Pais)
+                </button>
                 <button onclick="switchTab('atestados')" id="tab-atestados" class="nav-btn flex items-center w-full px-4 py-3 text-sm font-medium rounded-lg text-slate-600 hover:bg-slate-50 hover:text-brand-600 transition-colors">
                     <i class="fa-solid fa-file-medical w-5 mr-3 text-lg text-teal-600"></i>
                     Atestados & Justificativas
@@ -158,7 +162,7 @@
 
                         <div class="bg-rose-50 border border-rose-200 p-4 rounded-xl">
                             <div class="flex items-center justify-between">
-                                <span class="text-xs font-semibold text-rose-700 uppercase">Bolsa Família em Risco (<75%)</span>
+                                <span class="text-xs font-semibold text-rose-700 uppercase">Bolsa Família em Risco (&lt;75%)</span>
                                 <i class="fa-solid fa-circle-exclamation text-rose-600"></i>
                             </div>
                             <span id="dash-bolsa-risco" class="text-2xl font-bold text-rose-800 mt-2 block">0</span>
@@ -234,6 +238,51 @@
                             <i class="fa-solid fa-floppy-disk"></i>
                             <span>Salvar Chamada desta Sala</span>
                         </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB: CONSULTA DE FALTAS (PARA ATENDIMENTO AOS PAIS) -->
+            <section id="section-consulta-faltas" class="tab-content hidden space-y-6">
+                <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+                        <div>
+                            <h2 class="text-xl font-bold text-slate-800"><i class="fa-solid fa-calendar-check text-brand-600 mr-2"></i>Consulta Mensal de Faltas (Atendimento aos Pais)</h2>
+                            <p class="text-xs text-slate-500 mt-0.5">Selecione a turma, o mês desejado e o aluno para visualizar o extrato detalhado de faltas para mostrar à família.</p>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6 bg-slate-50 p-4 rounded-xl border">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Turma / Sala</label>
+                            <select id="consulta-turma-select" onchange="carregarAlunosParaConsultaFaltas()" class="w-full bg-white border border-slate-300 rounded-lg p-2.5 text-sm font-semibold"></select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Selecione o Mês</label>
+                            <select id="consulta-mes-select" onchange="executarConsultaFaltasAluno()" class="w-full bg-white border border-slate-300 rounded-lg p-2.5 text-sm font-bold text-brand-700">
+                                <option value="2">Fevereiro</option>
+                                <option value="3">Março</option>
+                                <option value="4">Abril</option>
+                                <option value="5">Maio</option>
+                                <option value="6">Junho</option>
+                                <option value="7">Julho</option>
+                                <option value="8">Agosto</option>
+                                <option value="9">Setembro</option>
+                                <option value="10">Outubro</option>
+                                <option value="11">Novembro</option>
+                                <option value="12">Dezembro</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Aluno</label>
+                            <select id="consulta-aluno-select" onchange="executarConsultaFaltasAluno()" class="w-full bg-white border border-slate-300 rounded-lg p-2.5 text-sm font-semibold"></select>
+                        </div>
+                    </div>
+
+                    <div id="resultado-consulta-faltas" class="space-y-4">
+                        <div class="p-8 text-center text-slate-400 text-xs italic bg-slate-50 rounded-xl border">
+                            Selecione uma turma, mês e aluno acima para exibir o extrato de faltas.
+                        </div>
                     </div>
                 </div>
             </section>
@@ -449,7 +498,7 @@
                             <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Filtrar Situação</label>
                             <select id="bolsa-status-filtro" onchange="renderizarRelatorioBolsa()" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm font-semibold">
                                 <option value="TODOS">Todos os Beneficiários</option>
-                                <option value="RISCO">Apenas quem perdeu o benefício (<75%)</option>
+                                <option value="RISCO">Apenas quem perdeu o benefício (&lt;75%)</option>
                             </select>
                         </div>
                     </div>
@@ -1008,6 +1057,7 @@
                 carregarTurmasNosSelects();
                 carregarTutoresNosSelects();
                 carregarTurmasNoSelectModalAtestado();
+                carregarAlunosParaConsultaFaltas();
                 atualizarTelaAtual();
             });
 
@@ -1072,6 +1122,10 @@
         function atualizarTelaAtual() {
             if (abaAtual === 'dashboard') renderizarDashboard();
             if (abaAtual === 'chamada') carregarAlunosParaChamada();
+            if (abaAtual === 'consulta-faltas') {
+                carregarAlunosParaConsultaFaltas();
+                executarConsultaFaltasAluno();
+            }
             if (abaAtual === 'atestados') renderizarTabelaAtestados();
             if (abaAtual === 'busca-ativa') renderizarBuscaAtiva();
             if (abaAtual === 'relatorios-busca') renderizarRelatoriosBusca();
@@ -1183,6 +1237,7 @@
             const turmas = Array.from(turmasSet).sort();
 
             const selectChamada = document.getElementById('chamada-turma-select');
+            const selectConsultaTurma = document.getElementById('consulta-turma-select');
             const selectBusca = document.getElementById('filtro-busca-turma');
             const selectRelatorio = document.getElementById('relatorio-turma-select');
             const selectBolsa = document.getElementById('bolsa-turma-select');
@@ -1193,6 +1248,12 @@
             const valChamada = selectChamada.value;
             selectChamada.innerHTML = turmas.map(t => `<option value="${t}">${t}</option>`).join('');
             if (valChamada) selectChamada.value = valChamada;
+
+            if (selectConsultaTurma) {
+                const valConsTurma = selectConsultaTurma.value;
+                selectConsultaTurma.innerHTML = turmas.map(t => `<option value="${t}">${t}</option>`).join('');
+                if (valConsTurma && turmas.includes(valConsTurma)) selectConsultaTurma.value = valConsTurma;
+            }
             
             const opcaoTodasTurmas = '<option value="TODAS">Todas as Turmas (Geral)</option>';
             
@@ -1225,6 +1286,7 @@
             }
 
             carregarTurmasNoSelectModalAtestado();
+            carregarAlunosParaConsultaFaltas();
         }
 
         function carregarTutoresNosSelects() {
@@ -1287,6 +1349,135 @@
             selectAlunoModal.innerHTML = alunosTurma.map(a => `
                 <option value="${a.id}">[Nº ${a.numero || '-'}] ${a.nome} (RA: ${a.ra})</option>
             `).join('');
+        }
+
+        // ==================== CONSULTA DE FALTAS PARA OS PAIS ====================
+        function carregarAlunosParaConsultaFaltas() {
+            const selectTurma = document.getElementById('consulta-turma-select');
+            const selectAluno = document.getElementById('consulta-aluno-select');
+            if (!selectTurma || !selectAluno) return;
+
+            const turmaSel = selectTurma.value;
+            const alunosTurma = appState.alunos
+                .filter(a => !turmaSel || a.turma === turmaSel)
+                .sort((a, b) => (parseInt(a.numero) || 999) - (parseInt(b.numero) || 999));
+
+            const alunoValAtual = selectAluno.value;
+            if (alunosTurma.length === 0) {
+                selectAluno.innerHTML = '<option value="">Nenhum aluno encontrado</option>';
+                executarConsultaFaltasAluno();
+                return;
+            }
+
+            selectAluno.innerHTML = alunosTurma.map(a => `
+                <option value="${a.id}">[Nº ${a.numero || '-'}] ${a.nome} (RA: ${a.ra})</option>
+            `).join('');
+
+            if (alunoValAtual && alunosTurma.some(a => a.id === alunoValAtual)) {
+                selectAluno.value = alunoValAtual;
+            }
+            executarConsultaFaltasAluno();
+        }
+
+        const nomesMeses = [
+            "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", 
+            "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
+        ];
+
+        function executarConsultaFaltasAluno() {
+            const alunoId = document.getElementById('consulta-aluno-select').value;
+            const mesSel = parseInt(document.getElementById('consulta-mes-select').value);
+            const container = document.getElementById('resultado-consulta-faltas');
+            if (!container) return;
+
+            if (!alunoId) {
+                container.innerHTML = '<div class="p-8 text-center text-slate-400 text-xs italic bg-slate-50 rounded-xl border">Nenhum aluno selecionado.</div>';
+                return;
+            }
+
+            const aluno = appState.alunos.find(a => a.id === alunoId);
+            if (!aluno) return;
+
+            const anoAtual = new Date().getFullYear();
+            const primeiroDiaMes = `${anoAtual}-${String(mesSel).padStart(2, '0')}-01`;
+            const ultimoDiaMes = new Date(anoAtual, mesSel, 0).toISOString().split('T')[0];
+            const nomeMes = nomesMeses[mesSel - 1];
+
+            const dataMatricula = aluno.dataMatricula || '2026-02-02';
+            const totalDiasLetivosMes = contarDiasLetivosMarcadosNoPeriodo(primeiroDiaMes, ultimoDiaMes, dataMatricula);
+            const faltasArray = getFaltasAlunoPorIntervalo(aluno.id, primeiroDiaMes, ultimoDiaMes);
+            const totalFaltas = faltasArray.length;
+            const presencas = Math.max(0, totalDiasLetivosMes - totalFaltas);
+            const percFreq = totalDiasLetivosMes > 0 ? ((presencas / totalDiasLetivosMes) * 100).toFixed(1) : "100.0";
+            const atestadosMes = appState.atestados.filter(at => at.alunoId === aluno.id && !(at.dataFim < primeiroDiaMes || at.dataInicio > ultimoDiaMes));
+
+            container.innerHTML = `
+                <div class="bg-slate-50 p-5 rounded-xl border border-slate-200 space-y-4">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b pb-3">
+                        <div>
+                            <h3 class="font-bold text-lg text-slate-800">${aluno.nome}</h3>
+                            <p class="text-xs text-slate-500">Turma: <strong>${aluno.turma}</strong> • RA: <strong>${aluno.ra}</strong> • Responsável: <strong>${aluno.responsavel || 'Não informado'}</strong></p>
+                        </div>
+                        <span class="bg-brand-600 text-white font-bold text-xs px-3 py-1.5 rounded-lg">
+                            Mês de Referência: ${nomeMes} de ${anoAtual}
+                        </span>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
+                        <div class="bg-white p-4 rounded-xl border shadow-sm text-center">
+                            <span class="block text-xs font-semibold text-slate-400 uppercase">Dias Letivos Válidos</span>
+                            <span class="text-2xl font-bold text-slate-800 mt-1 block">${totalDiasLetivosMes}</span>
+                        </div>
+                        <div class="bg-emerald-50 p-4 rounded-xl border border-emerald-200 text-center">
+                            <span class="block text-xs font-semibold text-emerald-700 uppercase">Presenças</span>
+                            <span class="text-2xl font-bold text-emerald-800 mt-1 block">${presencas}</span>
+                        </div>
+                        <div class="bg-rose-50 p-4 rounded-xl border border-rose-200 text-center">
+                            <span class="block text-xs font-semibold text-rose-700 uppercase">Total de Faltas</span>
+                            <span class="text-2xl font-bold text-rose-800 mt-1 block">${totalFaltas}</span>
+                        </div>
+                        <div class="bg-indigo-50 p-4 rounded-xl border border-indigo-200 text-center">
+                            <span class="block text-xs font-semibold text-indigo-700 uppercase">Frequência Mensal</span>
+                            <span class="text-2xl font-bold text-indigo-800 mt-1 block">${percFreq}%</span>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-4 rounded-xl border shadow-sm">
+                        <h4 class="font-bold text-xs text-slate-700 uppercase mb-3"><i class="fa-solid fa-calendar-xmark text-rose-600 mr-1.5"></i> Datas das Faltas Registradas em ${nomeMes}:</h4>
+                        ${faltasArray.length === 0 ? `
+                            <p class="text-xs text-emerald-700 font-semibold italic bg-emerald-50 p-3 rounded-lg border border-emerald-100">
+                                <i class="fa-solid fa-circle-check mr-1"></i> Nenhuma falta registrada para este aluno no mês de ${nomeMes}.
+                            </p>
+                        ` : `
+                            <div class="flex flex-wrap gap-2">
+                                ${faltasArray.map(f => `
+                                    <span class="bg-rose-100 text-rose-900 border border-rose-200 font-bold text-xs px-3 py-1 rounded-lg">
+                                        ${f.data.split('-').reverse().join('/')}
+                                    </span>
+                                `).join('')}
+                            </div>
+                        `}
+                    </div>
+
+                    <div class="bg-white p-4 rounded-xl border shadow-sm">
+                        <h4 class="font-bold text-xs text-slate-700 uppercase mb-3"><i class="fa-solid fa-file-medical text-teal-600 mr-1.5"></i> Atestados / Justificativas no Mês:</h4>
+                        ${atestadosMes.length === 0 ? `
+                            <p class="text-xs text-slate-400 italic">Nenhum atestado ou justificativa cadastrada neste período.</p>
+                        ` : `
+                            <div class="space-y-2">
+                                ${atestadosMes.map(at => `
+                                    <div class="bg-teal-50 border border-teal-200 text-teal-900 p-2.5 rounded-lg text-xs flex justify-between items-center">
+                                        <div>
+                                            <span class="font-bold">${at.tipo}</span> (${at.dataInicio.split('-').reverse().join('/')} a ${at.dataFim.split('-').reverse().join('/')})
+                                            ${at.obs ? '<span class="block text-slate-600 mt-0.5">• ' + at.obs + '</span>' : ''}
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        `}
+                    </div>
+                </div>
+            `;
         }
 
         function renderizarTurmasBadges() {
@@ -1717,7 +1908,6 @@
             }
 
             try {
-                // Coleta o estado de cada botão (se o botão de falta está com fundo vermelho/ativo)
                 const statusAlunosTurma = [];
                 linhasAlunos.forEach(linha => {
                     const alunoId = linha.getAttribute('data-aluno-id');
@@ -1731,7 +1921,6 @@
                     }
                 });
 
-                // Executa em lote atômico (Batch) para cada aluno da sala simultaneamente
                 const batch = db.batch();
                 let totalFaltasMarcadas = 0;
 
@@ -2163,7 +2352,7 @@
                                     </span>` :
                                     (perdeuBeneficio ? 
                                         `<span class="bg-rose-600 text-white font-bold text-xs px-2.5 py-1 rounded-full shadow-sm inline-block">
-                                            <i class="fa-solid fa-triangle-exclamation mr-1"></i> EM RISCO (<75%)
+                                            <i class="fa-solid fa-triangle-exclamation mr-1"></i> EM RISCO (&lt;75%)
                                         </span>` : 
                                         `<span class="bg-emerald-100 text-emerald-800 font-semibold text-xs px-2.5 py-1 rounded-full inline-block">
                                             <i class="fa-solid fa-circle-check mr-1"></i> REGULAR (≥75%)
@@ -2373,11 +2562,6 @@
         // ==================== CALENDÁRIO VISUAL DE DIAS LETIVOS (L) ====================
         let mesSelecionadoCalendario = 2;
 
-        const nomesMeses = [
-            "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", 
-            "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
-        ];
-
         function carregarConfiguracoesCalendario() {
             if (appState.config && appState.config.bimestres) {
                 for (let b = 1; b <= 4; b++) {
@@ -2516,6 +2700,11 @@
             const selectMesBolsa = document.getElementById('bolsa-mes-select');
             if (selectMesBolsa) {
                 selectMesBolsa.value = mesAtualNum >= 2 && mesAtualNum <= 12 ? mesAtualNum : 2;
+            }
+
+            const selectConsultaMes = document.getElementById('consulta-mes-select');
+            if (selectConsultaMes) {
+                selectConsultaMes.value = mesAtualNum >= 2 && mesAtualNum <= 12 ? mesAtualNum : 2;
             }
 
             document.getElementById('print-data-hoje').innerText = new Date().toLocaleDateString('pt-BR');
